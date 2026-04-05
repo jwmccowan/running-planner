@@ -6,7 +6,7 @@
 | -- | ------------------------- | ------ | ----------- |
 | 1  | Data model + types        | done   | PR #1       |
 | 2  | Calculation functions     | done   | PR #1       |
-| 3  | Seed data                 | todo   |             |
+| 3  | Seed data                 | done   | PR #3       |
 | 4  | Read-only plan view       | todo   |             |
 | 5  | Editing                   | todo   |             |
 | 6  | DynamoDB persistence      | todo   |             |
@@ -20,19 +20,13 @@
 - **Blocks**: 4-week visual grouping, cosmetic only in v1
 - **Future features to keep in mind**: move workouts, bulk updates, copy/paste, undo (don't design these out)
 
-## Next step: Seed data (#3)
+## Next step: Read-only plan view (#4)
 
-Transcribe the user's existing spreadsheet into a JSON fixture that matches the `Activity[]` type. This serves two purposes:
+Render the seed data as a weekly calendar grid with stats. Reference the prototype screenshot for layout:
 
-1. Real data to develop the UI against
-2. Validates the data model handles real-world plans
+- Left panel: week summary (date range, chronic distance, ideal acute range, acute distance with % change, percent easy)
+- Right grid: Mon–Sun columns, each cell showing the day's activities with distance and % of weekly total
+- 4-week block separators
+- Color coding: green/red for acute distance in/out of range, green/red for percent easy above/below 80%
 
-The spreadsheet covers weeks 1–24 (Feb 9 – Jul 20). Key patterns:
-- Each week has 2–5 running activities across different days
-- Some days combine gym + run (these become separate activities)
-- Run types: easy run, long run, parkrun
-- Parkrun (5km) has `intenseDistance: 5` — it's raced. All other runs have `intenseDistance: 0`
-- Weekly totals range from 15km to 60km
-- 4-week blocks with a deload week (lower volume) at the end of each block
-
-After seed data, step 4 is the read-only plan view — the first visible output.
+Seed data is in `lib/seed-data.ts`. Calculations are in `lib/calculations.ts`. Use those directly — no API layer yet.

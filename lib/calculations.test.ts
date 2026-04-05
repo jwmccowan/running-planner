@@ -127,10 +127,29 @@ describe("computeWeekSummaries", () => {
     expect(computeWeekSummaries([])).toEqual([]);
   });
 
-  it("uses acute distance as chronic for the first week", () => {
+  it("uses acute distance as chronic for the first week with no prior data", () => {
     const activities = [run("2025-03-03", 15)];
     const summaries = computeWeekSummaries(activities);
     expect(summaries[0].chronicDistance).toBe(15);
+  });
+
+  it("uses priorWeeklyDistances for early chronic calculations", () => {
+    const activities = [
+      run("2025-03-03", 20), // week 1
+    ];
+    const summaries = computeWeekSummaries(activities, [10, 12, 14, 16]);
+    // chronic = avg of prior 4 weeks = (10+12+14+16)/4 = 13
+    expect(summaries[0].chronicDistance).toBeCloseTo(13, 1);
+  });
+
+  it("blends prior and plan weeks for chronic calculation", () => {
+    const activities = [
+      run("2025-03-03", 20), // week 1
+      run("2025-03-10", 22), // week 2
+    ];
+    const summaries = computeWeekSummaries(activities, [10, 12, 14, 16]);
+    // week 2 chronic = avg of [12, 14, 16, 20] = 15.5
+    expect(summaries[1].chronicDistance).toBeCloseTo(15.5, 1);
   });
 });
 

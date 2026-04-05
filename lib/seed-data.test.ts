@@ -3,7 +3,7 @@ import { seedPlan } from "./seed-data";
 import { computeWeekSummaries } from "./calculations";
 
 describe("seed data", () => {
-  const summaries = computeWeekSummaries(seedPlan.activities);
+  const summaries = computeWeekSummaries(seedPlan.activities, seedPlan.priorWeeklyDistances);
 
   // Expected weekly totals from the spreadsheet
   const expectedTotals = [

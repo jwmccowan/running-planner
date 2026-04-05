@@ -14,6 +14,7 @@ export type Plan = {
   name: string;
   startDate: string; // ISO date, must be a Monday
   activities: Activity[];
+  priorWeeklyDistances: number[]; // up to 4 weekly totals before startDate, oldest first
 };
 
 export type WeekStats = {
@@ -29,6 +30,7 @@ export type WeekStats = {
 export type WeekSummary = WeekStats & {
   chronicDistance: number;
   idealAcuteRange: [low: number, high: number];
+  acuteVsChronicChange: number; // (acute - chronic) / chronic × 100
   weekOverWeekChange: number | null; // null for first week
   longestRunVsPrevWeek: number | null;
   longestRunVs4WeekAvg: number | null;

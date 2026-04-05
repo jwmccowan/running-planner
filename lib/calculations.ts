@@ -55,7 +55,10 @@ export function computeWeekStats(
   };
 }
 
-export function computeWeekSummaries(activities: Activity[]): WeekSummary[] {
+export function computeWeekSummaries(
+  activities: Activity[],
+  priorWeeklyDistances: number[] = []
+): WeekSummary[] {
   if (activities.length === 0) return [];
 
   const dates = activities.map((a) => parseDate(a.date));
@@ -71,20 +74,30 @@ export function computeWeekSummaries(activities: Activity[]): WeekSummary[] {
 
   const weekStats = weeks.map((w) => computeWeekStats(activities, w));
 
+  // Prepend prior distances so early weeks have history for chronic calculation
+  const allAcuteDistances = [
+    ...priorWeeklyDistances,
+    ...weekStats.map((w) => w.acuteDistance),
+  ];
+  const priorCount = priorWeeklyDistances.length;
+
   return weekStats.map((stats, i) => {
-    const prevWeeks = weekStats.slice(
-      Math.max(0, i - config.chronicWeeks),
-      i
-    );
+    const adjustedIndex = priorCount + i;
+    const windowStart = Math.max(0, adjustedIndex - config.chronicWeeks);
+    const prevDistances = allAcuteDistances.slice(windowStart, adjustedIndex);
+
     const chronicDistance =
-      prevWeeks.length > 0
-        ? prevWeeks.reduce((sum, w) => sum + w.acuteDistance, 0) /
-          prevWeeks.length
+      prevDistances.length > 0
+        ? prevDistances.reduce((sum, d) => sum + d, 0) / prevDistances.length
         : stats.acuteDistance;
 
     const prev = i > 0 ? weekStats[i - 1] : null;
 
-    const prevLongestRuns = prevWeeks.map((w) => w.longestRun);
+    const prevWeekStats = weekStats.slice(
+      Math.max(0, i - config.chronicWeeks),
+      i
+    );
+    const prevLongestRuns = prevWeekStats.map((w) => w.longestRun);
     const avgLongestRun =
       prevLongestRuns.length > 0
         ? prevLongestRuns.reduce((sum, v) => sum + v, 0) /
@@ -98,6 +111,10 @@ export function computeWeekSummaries(activities: Activity[]): WeekSummary[] {
         chronicDistance * config.acuteRangeLow,
         chronicDistance * config.acuteRangeHigh,
       ] as [number, number],
+      acuteVsChronicChange:
+        chronicDistance > 0
+          ? ((stats.acuteDistance - chronicDistance) / chronicDistance) * 100
+          : 0,
       weekOverWeekChange:
         prev && prev.acuteDistance > 0
           ? ((stats.acuteDistance - prev.acuteDistance) / prev.acuteDistance) *
