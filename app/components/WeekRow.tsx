@@ -15,10 +15,14 @@ export default function WeekRow({
   summary,
   activities,
   dayOffset,
+  expanded,
+  onToggle,
 }: {
   summary: WeekSummaryType;
   activities: Activity[];
   dayOffset: number;
+  expanded: boolean;
+  onToggle: () => void;
 }) {
   const actsByDate = new Map<string, Activity[]>();
   for (const a of activities) {
@@ -28,8 +32,11 @@ export default function WeekRow({
   }
 
   return (
-    <div className="flex">
-      <WeekSummary summary={summary} />
+    <div
+      className="flex cursor-pointer hover:bg-zinc-50 rounded"
+      onClick={onToggle}
+    >
+      <WeekSummary summary={summary} expanded={expanded} />
       <div className="grid grid-cols-7 flex-1 gap-px">
         {DAYS.map((_, i) => {
           const date = addDays(summary.startDate, i);
@@ -40,6 +47,7 @@ export default function WeekRow({
               dayNumber={dayOffset + i + 1}
               activities={dayActivities}
               weekTotal={summary.acuteDistance}
+              expanded={expanded}
             />
           );
         })}
