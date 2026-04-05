@@ -233,4 +233,5 @@ export const seedPlan: Plan = {
   name: "2026 Training Plan",
   startDate: "2026-02-09",
   activities,
+  priorWeeklyDistances: [15, 15, 15, 15],
 };

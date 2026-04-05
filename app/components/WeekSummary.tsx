@@ -23,25 +23,22 @@ export default function WeekSummary({ summary }: { summary: WeekSummaryType }) {
 
   const easyEnough = summary.percentEasy >= 80;
 
-  const changeStr =
-    summary.weekOverWeekChange !== null
-      ? `(${summary.weekOverWeekChange >= 0 ? "+" : ""}${Math.round(summary.weekOverWeekChange)}%)`
-      : "";
+  const chronicChangeStr = `(${summary.acuteVsChronicChange >= 0 ? "+" : ""}${Math.round(summary.acuteVsChronicChange)}%)`;
 
   return (
     <div className="text-sm leading-relaxed py-2 pr-4 min-w-56">
       <div className="font-semibold text-zinc-900">
         {formatRange(summary.startDate, summary.endDate)}
       </div>
-      <div className="text-zinc-600">
+      <div className="text-zinc-800">
         Chronic distance: {formatNum(summary.chronicDistance)}
       </div>
-      <div className="text-zinc-600">
+      <div className="text-zinc-800">
         Ideal acute range: ({formatNum(summary.idealAcuteRange[0])} –{" "}
         {formatNum(summary.idealAcuteRange[1])})
       </div>
       <div className={inRange ? "text-green-700" : "text-red-600"}>
-        Acute distance: {formatNum(summary.acuteDistance)} {changeStr}
+        Acute distance: {formatNum(summary.acuteDistance)} {chronicChangeStr}
       </div>
       <div className={easyEnough ? "text-green-700" : "text-red-600"}>
         Percent easy: {Math.round(summary.percentEasy)}%
