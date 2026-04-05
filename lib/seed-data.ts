@@ -84,7 +84,7 @@ const activities: Activity[] = [
   easyRun("2026-04-08", 6),   // Wed
   gym("2026-04-10"),           // Fri
   parkrun("2026-04-11"),       // Sat
-  longRun("2026-04-12", 8),   // Sun
+  longRun("2026-04-12", 9),   // Sun
 
   // Week 10 (Apr 13): 28km
   gym("2026-04-14"),           // Tue (gym)
@@ -92,7 +92,7 @@ const activities: Activity[] = [
   easyRun("2026-04-15", 7),   // Wed
   gym("2026-04-17"),           // Fri
   parkrun("2026-04-18"),       // Sat
-  longRun("2026-04-19", 9),   // Sun
+  longRun("2026-04-19", 10),   // Sun
 
   // Week 11 (Apr 20): 30km
   gym("2026-04-21"),           // Tue (gym)
@@ -100,12 +100,12 @@ const activities: Activity[] = [
   easyRun("2026-04-22", 8),   // Wed
   gym("2026-04-24"),           // Fri
   parkrun("2026-04-25"),       // Sat
-  longRun("2026-04-26", 10),  // Sun
+  longRun("2026-04-26", 11),  // Sun
 
   // Week 12 (Apr 27): 20km
   gym("2026-04-28"),           // Tue (gym)
   easyRun("2026-04-28", 4),   // Tue
-  easyRun("2026-04-29", 4),   // Wed
+  easyRun("2026-04-29", 5),   // Wed
   gym("2026-05-01"),           // Fri
   parkrun("2026-05-02"),       // Sat
   longRun("2026-05-03", 7),   // Sun
