@@ -65,24 +65,39 @@ function ExpandedDayCell({
 }
 
 export default function DayCell({
+  date,
   dayNumber,
   activities,
   weekTotal,
   expanded,
+  onEdit,
 }: {
+  date: string;
   dayNumber: number;
   activities: Activity[];
   weekTotal: number;
   expanded: boolean;
+  onEdit: (date: string) => void;
 }) {
+  function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    onEdit(date);
+  }
+
   if (expanded) {
     return (
-      <ExpandedDayCell
-        dayNumber={dayNumber}
-        activities={activities}
-        weekTotal={weekTotal}
-      />
+      <div onClick={handleClick} className="cursor-pointer hover:ring-1 hover:ring-blue-300 rounded">
+        <ExpandedDayCell
+          dayNumber={dayNumber}
+          activities={activities}
+          weekTotal={weekTotal}
+        />
+      </div>
     );
   }
-  return <CompactDayCell activities={activities} />;
+  return (
+    <div onClick={handleClick} className="cursor-pointer hover:bg-zinc-100 rounded">
+      <CompactDayCell activities={activities} />
+    </div>
+  );
 }
