@@ -1,16 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import type { Plan } from "@/lib/types";
+import type { Activity, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
 import WeekRow from "./WeekRow";
+import DayEditorModal from "./DayEditorModal";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function PlanView({ plan }: { plan: Plan }) {
-  const summaries = computeWeekSummaries(plan.activities, plan.priorWeeklyDistances);
-  const byWeek = groupActivitiesByWeek(plan.activities);
+  const [activities, setActivities] = useState<Activity[]>(plan.activities);
+  const [editingDate, setEditingDate] = useState<string | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
+
+  const summaries = computeWeekSummaries(activities, plan.priorWeeklyDistances);
+  const byWeek = groupActivitiesByWeek(activities);
 
   function toggleWeek(startDate: string) {
     setExpandedWeeks((prev) => {
@@ -22,6 +26,14 @@ export default function PlanView({ plan }: { plan: Plan }) {
       }
       return next;
     });
+  }
+
+  function handleSave(date: string, updated: Activity[]) {
+    setActivities((prev) => [
+      ...prev.filter((a) => a.date !== date),
+      ...updated,
+    ]);
+    setEditingDate(null);
   }
 
   return (
@@ -52,10 +64,20 @@ export default function PlanView({ plan }: { plan: Plan }) {
               dayOffset={i * 7}
               expanded={expandedWeeks.has(summary.startDate)}
               onToggle={() => toggleWeek(summary.startDate)}
+              onDayEdit={setEditingDate}
             />
           </div>
         );
       })}
+
+      {editingDate && (
+        <DayEditorModal
+          date={editingDate}
+          activities={activities.filter((a) => a.date === editingDate)}
+          onSave={(updated) => handleSave(editingDate, updated)}
+          onClose={() => setEditingDate(null)}
+        />
+      )}
     </div>
   );
 }
