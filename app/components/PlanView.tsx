@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { Activity, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
+import { savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
 import DayEditorModal from "./DayEditorModal";
 
@@ -12,6 +13,8 @@ export default function PlanView({ plan }: { plan: Plan }) {
   const [activities, setActivities] = useState<Activity[]>(plan.activities);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
+  const [saved, setSaved] = useState(true);
+  const [saving, startSaving] = useTransition();
 
   const summaries = computeWeekSummaries(activities, plan.priorWeeklyDistances);
   const byWeek = groupActivitiesByWeek(activities);
@@ -28,17 +31,34 @@ export default function PlanView({ plan }: { plan: Plan }) {
     });
   }
 
-  function handleSave(date: string, updated: Activity[]) {
+  function handleDayEdit(date: string, updated: Activity[]) {
     setActivities((prev) => [
       ...prev.filter((a) => a.date !== date),
       ...updated,
     ]);
+    setSaved(false);
     setEditingDate(null);
+  }
+
+  function handleSave() {
+    startSaving(async () => {
+      await savePlanAction({ ...plan, activities });
+      setSaved(true);
+    });
   }
 
   return (
     <div className="p-6">
-      <h1 className="text-xl font-bold mb-4">{plan.name}</h1>
+      <div className="flex items-center gap-4 mb-4">
+        <h1 className="text-xl font-bold">{plan.name}</h1>
+        <button
+          onClick={handleSave}
+          disabled={saved || saving}
+          className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {saving ? "Saving…" : saved ? "Saved" : "Save"}
+        </button>
+      </div>
       <div className="flex mb-1">
         <div className="min-w-48 pr-4" />
         <div className="grid grid-cols-7 flex-1 gap-px">
@@ -74,7 +94,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
         <DayEditorModal
           date={editingDate}
           activities={activities.filter((a) => a.date === editingDate)}
-          onSave={(updated) => handleSave(editingDate, updated)}
+          onSave={(updated) => handleDayEdit(editingDate, updated)}
           onClose={() => setEditingDate(null)}
         />
       )}
