@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Activity, ActivityType } from "@/lib/types";
+import type { Activity, ActivityStatus, ActivityType } from "@/lib/types";
 
 type DraftActivity = {
   id: string;
@@ -9,6 +9,7 @@ type DraftActivity = {
   type: ActivityType;
   distance: string;
   intenseDistance: string;
+  status?: ActivityStatus;
 };
 
 function toDraft(a: Activity): DraftActivity {
@@ -18,6 +19,7 @@ function toDraft(a: Activity): DraftActivity {
     type: a.type,
     distance: String(a.distance),
     intenseDistance: String(a.intenseDistance),
+    status: a.status,
   };
 }
 
@@ -29,6 +31,7 @@ function fromDraft(d: DraftActivity, date: string): Activity {
     type: d.type,
     distance: parseFloat(d.distance) || 0,
     intenseDistance: parseFloat(d.intenseDistance) || 0,
+    status: d.status,
   };
 }
 

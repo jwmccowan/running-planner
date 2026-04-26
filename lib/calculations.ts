@@ -35,7 +35,7 @@ export function computeWeekStats(
   const end = formatDate(addDays(weekStart, 6));
 
   const runs = runsOnly(activities).filter(
-    (a) => a.date >= start && a.date <= end
+    (a) => a.status !== "missed" && a.date >= start && a.date <= end
   );
 
   const acuteDistance = runs.reduce((sum, r) => sum + r.distance, 0);

@@ -1,4 +1,5 @@
 export type ActivityType = "run" | "gym" | "rest";
+export type ActivityStatus = "completed" | "missed";
 
 export type Activity = {
   id: string;
@@ -7,6 +8,7 @@ export type Activity = {
   distance: number; // km
   intenseDistance: number; // km, portion of distance that is intense
   type: ActivityType;
+  status?: ActivityStatus;
 };
 
 export type Plan = {

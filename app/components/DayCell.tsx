@@ -1,24 +1,70 @@
-import type { Activity } from "@/lib/types";
+import type { Activity, ActivityStatus } from "@/lib/types";
 
-function activityColor(activity: Activity): string {
-  if (activity.type === "gym") return "bg-purple-100 text-purple-800";
-  if (activity.name.includes("parkrun")) return "bg-green-100 text-green-800";
-  if (activity.name.includes("long run")) return "bg-amber-100 text-amber-800";
-  return "bg-blue-100 text-blue-800"; // easy run / default
+function nextStatus(current: ActivityStatus | undefined): ActivityStatus | undefined {
+  if (current === undefined) return "completed";
+  if (current === "completed") return "missed";
+  return undefined;
 }
 
-function CompactDayCell({ activities }: { activities: Activity[] }) {
+function chipColor(activity: Activity): string {
+  if (activity.status === "missed") return "bg-zinc-200 text-zinc-400";
+  if (activity.type === "gym") return activity.status === "completed" ? "bg-purple-200 text-purple-800" : "bg-purple-100 text-purple-800";
+  if (activity.name.includes("parkrun")) return activity.status === "completed" ? "bg-green-200 text-green-800" : "bg-green-100 text-green-800";
+  if (activity.name.includes("long run")) return activity.status === "completed" ? "bg-amber-200 text-amber-800" : "bg-amber-100 text-amber-800";
+  return activity.status === "completed" ? "bg-blue-200 text-blue-800" : "bg-blue-100 text-blue-800";
+}
+
+function statusIcon(status: ActivityStatus | undefined): string {
+  if (status === "completed") return "✓";
+  if (status === "missed") return "✗";
+  return "○";
+}
+
+function ActivityChip({
+  activity,
+  onStatusChange,
+  children,
+}: {
+  activity: Activity;
+  onStatusChange: (id: string, status: ActivityStatus | undefined) => void;
+  children: React.ReactNode;
+}) {
+  function handleStatusClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    onStatusChange(activity.id, nextStatus(activity.status));
+  }
+
+  return (
+    <div className={`flex rounded overflow-hidden text-xs ${chipColor(activity)}`}>
+      <div className={`flex-1 px-1.5 py-0.5 min-w-0 ${activity.status === "missed" ? "line-through" : ""}`}>
+        {children}
+      </div>
+      <button
+        onClick={handleStatusClick}
+        className="px-2 py-0.5 border-l border-black/10 bg-black/5 hover:bg-black/15 shrink-0 leading-none"
+        title="Toggle status"
+      >
+        {statusIcon(activity.status)}
+      </button>
+    </div>
+  );
+}
+
+function CompactDayCell({
+  activities,
+  onStatusChange,
+}: {
+  activities: Activity[];
+  onStatusChange: (id: string, status: ActivityStatus | undefined) => void;
+}) {
   if (activities.length === 0) return <div className="p-1 min-h-8" />;
 
   return (
     <div className="p-1 min-h-8 flex flex-col gap-0.5">
       {activities.map((a) => (
-        <div
-          key={a.id}
-          className={`text-xs truncate rounded px-1 ${activityColor(a)}`}
-        >
-          {a.name}
-        </div>
+        <ActivityChip key={a.id} activity={a} onStatusChange={onStatusChange}>
+          <span className="truncate block">{a.name}</span>
+        </ActivityChip>
       ))}
     </div>
   );
@@ -28,35 +74,34 @@ function ExpandedDayCell({
   dayNumber,
   activities,
   weekTotal,
+  onStatusChange,
 }: {
   dayNumber: number;
   activities: Activity[];
   weekTotal: number;
+  onStatusChange: (id: string, status: ActivityStatus | undefined) => void;
 }) {
   return (
     <div className="border border-zinc-300 min-h-20 p-2 text-sm">
       <div className="text-zinc-500 text-xs mb-1">Day #{dayNumber}</div>
       <div className="flex flex-col gap-1">
         {activities.map((a) => {
-          const color = activityColor(a);
           if (a.type === "gym") {
             return (
-              <div key={a.id} className={`rounded px-1.5 py-0.5 ${color}`}>
+              <ActivityChip key={a.id} activity={a} onStatusChange={onStatusChange}>
                 Gym
-              </div>
+              </ActivityChip>
             );
           }
           const pct =
             weekTotal > 0 ? Math.round((a.distance / weekTotal) * 100) : 0;
           return (
-            <div key={a.id} className={`rounded px-1.5 py-0.5 ${color}`}>
+            <ActivityChip key={a.id} activity={a} onStatusChange={onStatusChange}>
               <div>{a.name} ({pct}%)</div>
               {a.intenseDistance > 0 && (
-                <div className="text-xs opacity-70">
-                  {a.intenseDistance}km intense
-                </div>
+                <div className="text-xs opacity-70">{a.intenseDistance}km intense</div>
               )}
-            </div>
+            </ActivityChip>
           );
         })}
       </div>
@@ -71,6 +116,7 @@ export default function DayCell({
   weekTotal,
   expanded,
   onEdit,
+  onStatusChange,
 }: {
   date: string;
   dayNumber: number;
@@ -78,6 +124,7 @@ export default function DayCell({
   weekTotal: number;
   expanded: boolean;
   onEdit: (date: string) => void;
+  onStatusChange: (activityId: string, status: ActivityStatus | undefined) => void;
 }) {
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
@@ -91,13 +138,14 @@ export default function DayCell({
           dayNumber={dayNumber}
           activities={activities}
           weekTotal={weekTotal}
+          onStatusChange={onStatusChange}
         />
       </div>
     );
   }
   return (
     <div onClick={handleClick} className="cursor-pointer hover:bg-zinc-100 rounded">
-      <CompactDayCell activities={activities} />
+      <CompactDayCell activities={activities} onStatusChange={onStatusChange} />
     </div>
   );
 }

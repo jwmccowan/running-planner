@@ -1,4 +1,4 @@
-import type { Activity } from "@/lib/types";
+import type { Activity, ActivityStatus } from "@/lib/types";
 import type { WeekSummary as WeekSummaryType } from "@/lib/types";
 import WeekSummary from "./WeekSummary";
 import DayCell from "./DayCell";
@@ -18,6 +18,7 @@ export default function WeekRow({
   expanded,
   onToggle,
   onDayEdit,
+  onStatusChange,
 }: {
   summary: WeekSummaryType;
   activities: Activity[];
@@ -25,6 +26,7 @@ export default function WeekRow({
   expanded: boolean;
   onToggle: () => void;
   onDayEdit: (date: string) => void;
+  onStatusChange: (activityId: string, status: ActivityStatus | undefined) => void;
 }) {
   const actsByDate = new Map<string, Activity[]>();
   for (const a of activities) {
@@ -54,6 +56,7 @@ export default function WeekRow({
               weekTotal={summary.acuteDistance}
               expanded={expanded}
               onEdit={onDayEdit}
+              onStatusChange={onStatusChange}
             />
           );
         })}
