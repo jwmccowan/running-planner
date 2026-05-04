@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { Activity, Plan } from "@/lib/types";
+import type { Activity, ActivityStatus, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
 import { savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
@@ -38,6 +38,13 @@ export default function PlanView({ plan }: { plan: Plan }) {
     ]);
     setSaved(false);
     setEditingDate(null);
+  }
+
+  function handleStatusChange(activityId: string, status: ActivityStatus | undefined) {
+    setActivities((prev) =>
+      prev.map((a) => (a.id === activityId ? { ...a, status } : a))
+    );
+    setSaved(false);
   }
 
   function handleSave() {
@@ -85,6 +92,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
               expanded={expandedWeeks.has(summary.startDate)}
               onToggle={() => toggleWeek(summary.startDate)}
               onDayEdit={setEditingDate}
+              onStatusChange={handleStatusChange}
             />
           </div>
         );
