@@ -38,10 +38,19 @@ function fromDraft(d: DraftActivity, date: string): Activity {
   return { ...base, type: "run", runType: d.runType };
 }
 
+const DEFAULT_NAMES: Record<RunType | "gym", string> = {
+  easy: "Easy run",
+  workout: "Workout",
+  long: "Long run",
+  race: "Race",
+  gym: "Gym",
+};
+
+
 function newDraft(): DraftActivity {
   return {
     id: crypto.randomUUID(),
-    name: "Easy run",
+    name: DEFAULT_NAMES.easy,
     type: "run",
     runType: "easy",
     distance: "0",
@@ -110,10 +119,12 @@ export default function DayEditorModal({
                   value={draft.type === "gym" ? "gym" : draft.runType}
                   onChange={(e) => {
                     const val = e.target.value;
+                    const isDefault = Object.values(DEFAULT_NAMES).includes(draft.name);
                     if (val === "gym") {
-                      updateDraft(draft.id, { type: "gym" });
+                      updateDraft(draft.id, { type: "gym", ...(isDefault && { name: DEFAULT_NAMES.gym }) });
                     } else {
-                      updateDraft(draft.id, { type: "run", runType: val as RunType });
+                      const runType = val as RunType;
+                      updateDraft(draft.id, { type: "run", runType, ...(isDefault && { name: DEFAULT_NAMES[runType] }) });
                     }
                   }}
                   className="text-sm border border-zinc-300 rounded px-1 py-0.5"
