@@ -10,6 +10,7 @@ function run(date: string, distance: number, intenseDistance = 0): Activity {
     distance,
     intenseDistance,
     type: "run",
+    runType: "easy",
   };
 }
 

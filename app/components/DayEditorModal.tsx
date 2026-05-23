@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { Activity, ActivityStatus, ActivityType } from "@/lib/types";
+import type { Activity, ActivityStatus, RunType } from "@/lib/types";
 
 type DraftActivity = {
   id: string;
   name: string;
-  type: ActivityType;
+  type: "run" | "gym";
+  runType: RunType;
   distance: string;
   intenseDistance: string;
   status?: ActivityStatus;
@@ -17,6 +18,7 @@ function toDraft(a: Activity): DraftActivity {
     id: a.id,
     name: a.name,
     type: a.type,
+    runType: a.type === "run" ? a.runType : "easy",
     distance: String(a.distance),
     intenseDistance: String(a.intenseDistance),
     status: a.status,
@@ -24,15 +26,16 @@ function toDraft(a: Activity): DraftActivity {
 }
 
 function fromDraft(d: DraftActivity, date: string): Activity {
-  return {
+  const base = {
     id: d.id,
     name: d.name,
     date,
-    type: d.type,
     distance: parseFloat(d.distance) || 0,
     intenseDistance: parseFloat(d.intenseDistance) || 0,
     status: d.status,
   };
+  if (d.type === "gym") return { ...base, type: "gym" };
+  return { ...base, type: "run", runType: d.runType };
 }
 
 function newDraft(): DraftActivity {
@@ -40,6 +43,7 @@ function newDraft(): DraftActivity {
     id: crypto.randomUUID(),
     name: "Easy run",
     type: "run",
+    runType: "easy",
     distance: "0",
     intenseDistance: "0",
   };
@@ -103,15 +107,22 @@ export default function DayEditorModal({
             >
               <div className="flex gap-2 items-center">
                 <select
-                  value={draft.type}
-                  onChange={(e) =>
-                    updateDraft(draft.id, { type: e.target.value as ActivityType })
-                  }
+                  value={draft.type === "gym" ? "gym" : draft.runType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "gym") {
+                      updateDraft(draft.id, { type: "gym" });
+                    } else {
+                      updateDraft(draft.id, { type: "run", runType: val as RunType });
+                    }
+                  }}
                   className="text-sm border border-zinc-300 rounded px-1 py-0.5"
                 >
-                  <option value="run">Run</option>
+                  <option value="easy">Easy run</option>
+                  <option value="workout">Workout</option>
+                  <option value="long">Long run</option>
+                  <option value="race">Race</option>
                   <option value="gym">Gym</option>
-                  <option value="rest">Rest</option>
                 </select>
                 <input
                   value={draft.name}
@@ -127,7 +138,7 @@ export default function DayEditorModal({
                 </button>
               </div>
 
-              {draft.type !== "rest" && (
+              {draft.type !== "gym" && (
                 <div className="flex gap-3 items-center text-sm">
                   <label className="text-zinc-500 w-24">Distance (km)</label>
                   <input
@@ -141,7 +152,7 @@ export default function DayEditorModal({
                 </div>
               )}
 
-              {draft.type === "run" && (
+              {draft.type !== "gym" && (
                 <div className="flex gap-3 items-center text-sm">
                   <label className="text-zinc-500 w-24">Intense (km)</label>
                   <input

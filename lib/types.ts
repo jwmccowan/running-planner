@@ -1,15 +1,21 @@
-export type ActivityType = "run" | "gym" | "rest";
+export type RunType = "easy" | "workout" | "long" | "race";
 export type ActivityStatus = "completed" | "missed";
 
-export type Activity = {
+type BaseActivity = {
   id: string;
   name: string;
   date: string; // ISO date YYYY-MM-DD
   distance: number; // km
   intenseDistance: number; // km, portion of distance that is intense
-  type: ActivityType;
   status?: ActivityStatus;
 };
+
+export type Activity = BaseActivity & (
+  | { type: "run"; runType: RunType }
+  | { type: "gym" }
+);
+
+export type ActivityType = Activity["type"];
 
 export type Plan = {
   id: string;
