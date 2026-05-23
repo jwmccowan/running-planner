@@ -47,7 +47,7 @@ describe("seed data", () => {
 
   it("parkruns have intenseDistance 5", () => {
     const parkruns = seedPlan.activities.filter((a) =>
-      a.name.includes("parkrun")
+      a.name.toLowerCase().includes("parkrun")
     );
     expect(parkruns.length).toBeGreaterThan(0);
     for (const pr of parkruns) {

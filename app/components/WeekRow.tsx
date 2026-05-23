@@ -36,31 +36,29 @@ export default function WeekRow({
   }
 
   return (
-    <div className="flex">
+    <div className="grid gap-px" style={{ gridTemplateColumns: 'minmax(0, 1.3fr) repeat(7, minmax(0, 1fr))' }}>
       <div
         className="cursor-pointer hover:bg-zinc-50 rounded"
         onClick={onToggle}
       >
         <WeekSummary summary={summary} expanded={expanded} />
       </div>
-      <div className="grid grid-cols-7 flex-1 gap-px">
-        {DAYS.map((_, i) => {
-          const date = addDays(summary.startDate, i);
-          const dayActivities = actsByDate.get(date) ?? [];
-          return (
-            <DayCell
-              key={date}
-              date={date}
-              dayNumber={dayOffset + i + 1}
-              activities={dayActivities}
-              weekTotal={summary.acuteDistance}
-              expanded={expanded}
-              onEdit={onDayEdit}
-              onStatusChange={onStatusChange}
-            />
-          );
-        })}
-      </div>
+      {DAYS.map((_, i) => {
+        const date = addDays(summary.startDate, i);
+        const dayActivities = actsByDate.get(date) ?? [];
+        return (
+          <DayCell
+            key={date}
+            date={date}
+            dayNumber={dayOffset + i + 1}
+            activities={dayActivities}
+            weekTotal={summary.acuteDistance}
+            expanded={expanded}
+            onEdit={onDayEdit}
+            onStatusChange={onStatusChange}
+          />
+        );
+      })}
     </div>
   );
 }

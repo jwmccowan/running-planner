@@ -66,18 +66,16 @@ export default function PlanView({ plan }: { plan: Plan }) {
           {saving ? "Saving…" : saved ? "Saved" : "Save"}
         </button>
       </div>
-      <div className="flex mb-1">
-        <div className="min-w-48 pr-4" />
-        <div className="grid grid-cols-7 flex-1 gap-px">
-          {DAYS.map((day) => (
-            <div
-              key={day}
-              className="text-xs font-semibold text-zinc-500 px-1 pb-1"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
+      <div className="grid gap-px mb-1" style={{ gridTemplateColumns: 'minmax(0, 1.5fr) repeat(7, minmax(0, 1fr))' }}>
+        <div />
+        {DAYS.map((day) => (
+          <div
+            key={day}
+            className="text-xs font-semibold text-zinc-500 px-1 pb-1"
+          >
+            {day}
+          </div>
+        ))}
       </div>
       {summaries.map((summary, i) => {
         const weekActivities = byWeek.get(summary.startDate) ?? [];

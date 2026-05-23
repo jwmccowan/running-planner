@@ -8,10 +8,14 @@ function nextStatus(current: ActivityStatus | undefined): ActivityStatus | undef
 
 function chipColor(activity: Activity): string {
   if (activity.status === "missed") return "bg-zinc-200 text-zinc-400";
-  if (activity.type === "gym") return activity.status === "completed" ? "bg-purple-200 text-purple-800" : "bg-purple-100 text-purple-800";
-  if (activity.name.includes("parkrun")) return activity.status === "completed" ? "bg-green-200 text-green-800" : "bg-green-100 text-green-800";
-  if (activity.name.includes("long run")) return activity.status === "completed" ? "bg-amber-200 text-amber-800" : "bg-amber-100 text-amber-800";
-  return activity.status === "completed" ? "bg-blue-200 text-blue-800" : "bg-blue-100 text-blue-800";
+  const done = activity.status === "completed";
+  if (activity.type === "gym") return done ? "bg-purple-200 text-purple-800" : "bg-purple-100 text-purple-800";
+  switch (activity.runType) {
+    case "easy":    return done ? "bg-blue-200 text-blue-800"   : "bg-blue-100 text-blue-800";
+    case "workout": return done ? "bg-amber-200 text-amber-800" : "bg-amber-100 text-amber-800";
+    case "long":    return done ? "bg-green-200 text-green-800" : "bg-green-100 text-green-800";
+    case "race":    return done ? "bg-red-200 text-red-800"     : "bg-red-100 text-red-800";
+  }
 }
 
 function statusIcon(status: ActivityStatus | undefined): string {
@@ -63,7 +67,9 @@ function CompactDayCell({
     <div className="p-1 min-h-8 flex flex-col gap-0.5">
       {activities.map((a) => (
         <ActivityChip key={a.id} activity={a} onStatusChange={onStatusChange}>
-          <span className="truncate block">{a.name}</span>
+          <span className="truncate block">
+            {a.distance > 0 ? `${a.name} (${a.distance}km)` : a.name}
+          </span>
         </ActivityChip>
       ))}
     </div>
@@ -82,22 +88,15 @@ function ExpandedDayCell({
   onStatusChange: (id: string, status: ActivityStatus | undefined) => void;
 }) {
   return (
-    <div className="border border-zinc-300 min-h-20 p-2 text-sm">
+    <div className="h-full border border-zinc-300 min-h-20 p-2 text-sm">
       <div className="text-zinc-500 text-xs mb-1">Day #{dayNumber}</div>
       <div className="flex flex-col gap-1">
         {activities.map((a) => {
-          if (a.type === "gym") {
-            return (
-              <ActivityChip key={a.id} activity={a} onStatusChange={onStatusChange}>
-                Gym
-              </ActivityChip>
-            );
-          }
           const pct =
             weekTotal > 0 ? Math.round((a.distance / weekTotal) * 100) : 0;
           return (
             <ActivityChip key={a.id} activity={a} onStatusChange={onStatusChange}>
-              <div>{a.name} ({pct}%)</div>
+              <div>{a.distance > 0 ? `${a.name} (${a.distance}km · ${pct}%)` : a.name}</div>
               {a.intenseDistance > 0 && (
                 <div className="text-xs opacity-70">{a.intenseDistance}km intense</div>
               )}
@@ -133,7 +132,7 @@ export default function DayCell({
 
   if (expanded) {
     return (
-      <div onClick={handleClick} className="cursor-pointer hover:ring-1 hover:ring-blue-300 rounded">
+      <div onClick={handleClick} className="h-full cursor-pointer hover:ring-1 hover:ring-blue-300 rounded">
         <ExpandedDayCell
           dayNumber={dayNumber}
           activities={activities}

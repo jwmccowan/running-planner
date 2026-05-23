@@ -22,7 +22,7 @@ function CompactWeekSummary({ summary }: { summary: WeekSummaryType }) {
     summary.acuteDistance <= summary.idealAcuteRange[1];
 
   return (
-    <div className="text-sm py-1 pr-4 min-w-48">
+    <div className="text-sm py-1 pr-4">
       <span className="font-semibold text-zinc-900">
         {formatRange(summary.startDate, summary.endDate)}
       </span>
@@ -43,7 +43,7 @@ function ExpandedWeekSummary({ summary }: { summary: WeekSummaryType }) {
   const chronicChangeStr = `(${summary.acuteVsChronicChange >= 0 ? "+" : ""}${Math.round(summary.acuteVsChronicChange)}%)`;
 
   return (
-    <div className="text-sm leading-relaxed py-2 pr-4 min-w-48">
+    <div className="text-sm leading-relaxed py-2 pr-4">
       <div className="font-semibold text-zinc-900">
         {formatRange(summary.startDate, summary.endDate)}
       </div>

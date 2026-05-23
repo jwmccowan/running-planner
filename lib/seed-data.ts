@@ -6,15 +6,15 @@ function id(): string {
 }
 
 function easyRun(date: string, distance: number): Activity {
-  return { id: id(), name: `${distance}km easy run`, date, distance, intenseDistance: 0, type: "run" };
+  return { id: id(), name: "Easy run", date, distance, intenseDistance: 0, type: "run", runType: "easy" };
 }
 
 function longRun(date: string, distance: number): Activity {
-  return { id: id(), name: `${distance}km long run`, date, distance, intenseDistance: 0, type: "run" };
+  return { id: id(), name: "Long run", date, distance, intenseDistance: 0, type: "run", runType: "long" };
 }
 
 function parkrun(date: string): Activity {
-  return { id: id(), name: "5km parkrun", date, distance: 5, intenseDistance: 5, type: "run" };
+  return { id: id(), name: "Parkrun", date, distance: 5, intenseDistance: 5, type: "run", runType: "race" };
 }
 
 function gym(date: string): Activity {
