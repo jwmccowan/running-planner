@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useActionState, startTransition } from "react";
 import type { Activity, ActivityStatus, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
+import { useUndoHistory } from "@/lib/use-undo-history";
 import { savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
 import DayEditorModal from "./DayEditorModal";
@@ -10,11 +11,26 @@ import DayEditorModal from "./DayEditorModal";
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function PlanView({ plan }: { plan: Plan }) {
-  const [activities, setActivities] = useState<Activity[]>(plan.activities);
+  const {
+    value: activities,
+    set: setActivities,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    isSaved: saved,
+    markSaved,
+  } = useUndoHistory<Activity[]>(plan.activities);
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
-  const [saved, setSaved] = useState(true);
-  const [saving, startSaving] = useTransition();
+  const [, dispatch, saving] = useActionState(
+    async (_: null, toSave: Activity[]) => {
+      await savePlanAction({ ...plan, activities: toSave });
+      markSaved();
+      return null;
+    },
+    null
+  );
 
   const summaries = computeWeekSummaries(activities, plan.priorWeeklyDistances);
   const byWeek = groupActivitiesByWeek(activities);
@@ -36,7 +52,6 @@ export default function PlanView({ plan }: { plan: Plan }) {
       ...prev.filter((a) => a.date !== date),
       ...updated,
     ]);
-    setSaved(false);
     setEditingDate(null);
   }
 
@@ -44,22 +59,33 @@ export default function PlanView({ plan }: { plan: Plan }) {
     setActivities((prev) =>
       prev.map((a) => (a.id === activityId ? { ...a, status } : a))
     );
-    setSaved(false);
   }
 
-  function handleSave() {
-    startSaving(async () => {
-      await savePlanAction({ ...plan, activities });
-      setSaved(true);
-    });
-  }
 
   return (
     <div className="p-6">
       <div className="flex items-center gap-4 mb-4">
         <h1 className="text-xl font-bold">{plan.name}</h1>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={undo}
+            disabled={!canUndo}
+            title="Undo (Cmd+Z)"
+            className="px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Undo
+          </button>
+          <button
+            onClick={redo}
+            disabled={!canRedo}
+            title="Redo (Cmd+Shift+Z)"
+            className="px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Redo
+          </button>
+        </div>
         <button
-          onClick={handleSave}
+          onClick={() => startTransition(() => dispatch(activities))}
           disabled={saved || saving}
           className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
