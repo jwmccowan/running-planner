@@ -1,7 +1,5 @@
-import PlanView from "./components/PlanView";
-import { loadPlan } from "@/lib/plan-store";
+import { redirect } from "next/navigation";
 
-export default async function Home() {
-  const plan = await loadPlan("1");
-  return <PlanView plan={plan} />;
+export default function Home() {
+  redirect("/plans/1");
 }
