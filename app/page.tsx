@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { listPlans } from "@/lib/plan-store";
+import NewPlanButton from "@/app/components/NewPlanButton";
 import { sortPlanSummaries, summarizePlan, type PlanStatus } from "@/lib/plan-summary";
 
 const STATUS_LABEL: Record<PlanStatus, string> = {
@@ -43,7 +44,10 @@ export default async function Home() {
 
   return (
     <div className="p-6 max-w-2xl">
-      <h1 className="text-xl font-bold mb-4">Running Planner</h1>
+      <div className="flex items-center gap-4 mb-4">
+        <h1 className="text-xl font-bold">Running Planner</h1>
+        <NewPlanButton />
+      </div>
 
       {summaries.length === 0 && broken.length === 0 && (
         <p className="text-sm text-zinc-500">No plans yet.</p>

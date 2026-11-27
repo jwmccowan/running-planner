@@ -28,10 +28,12 @@ function describeActivity(a: Activity): string {
 }
 
 export default function PlanSettingsModal({
+  mode = "edit",
   current,
   onSave,
   onClose,
 }: {
+  mode?: "edit" | "create";
   current: PlanSettingsFields & Pick<Plan, "name">;
   onSave: (updated: PlanSettingsFields & Pick<Plan, "name">) => void;
   onClose: () => void;
@@ -50,6 +52,7 @@ export default function PlanSettingsModal({
       ? applyPlanSettings(current, startDate, weekCount, moveActivities)
       : null;
   const removed = preview?.removed ?? [];
+  const hasContent = current.activities.length > 0 || current.blockStarts.length > 0;
 
   function handleStartChange(next: string) {
     const bothValid = startValid && /^\d{4}-\d{2}-\d{2}$/.test(next) && isMonday(next);
@@ -80,7 +83,9 @@ export default function PlanSettingsModal({
         className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-base font-semibold mb-4">Plan settings</h2>
+        <h2 className="text-base font-semibold mb-4">
+          {mode === "create" ? "New plan" : "Plan settings"}
+        </h2>
 
         <div className="flex flex-col gap-3 text-sm">
           <div className="flex gap-3 items-center">
@@ -88,10 +93,11 @@ export default function PlanSettingsModal({
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
+              autoFocus={mode === "create"}
               className="flex-1 border border-zinc-300 rounded px-2 py-0.5 text-sm"
             />
           </div>
-          {!nameValid && <p className="text-red-600">Name can&apos;t be empty.</p>}
+          {name !== "" && !nameValid && <p className="text-red-600">Name can&apos;t be empty.</p>}
 
           <div className="flex gap-3 items-center">
             <label className="text-zinc-500 w-24">Start date</label>
@@ -104,7 +110,7 @@ export default function PlanSettingsModal({
           </div>
           {!startValid && <p className="text-red-600">Start date must be a Monday.</p>}
 
-          {startDate !== current.startDate && (
+          {hasContent && startDate !== current.startDate && (
             <label className="flex gap-2 items-center ml-27">
               <input
                 type="checkbox"
@@ -166,7 +172,9 @@ export default function PlanSettingsModal({
               removed.length > 0 ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
             }`}
           >
-            {removed.length === 0
+            {mode === "create"
+              ? "Create plan"
+              : removed.length === 0
               ? "Save"
               : `Save and delete ${removed.length} ${removed.length === 1 ? "activity" : "activities"}`}
           </button>

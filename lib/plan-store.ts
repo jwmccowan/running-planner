@@ -45,6 +45,35 @@ export async function listPlans(): Promise<PlanListEntry[]> {
   );
 }
 
+export async function createPlan(
+  fields: Pick<Plan, "name" | "startDate" | "weekCount">
+): Promise<Plan> {
+  await mkdir(DATA_DIR, { recursive: true });
+  const files = await readdir(DATA_DIR);
+  const ids = [seedPlan.id, ...files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length))];
+  let nextId = Math.max(0, ...ids.map(Number).filter(Number.isInteger)) + 1;
+
+  for (;;) {
+    const plan: Plan = {
+      id: String(nextId),
+      ...fields,
+      activities: [],
+      priorWeeklyDistances: [],
+      blockStarts: [],
+    };
+    try {
+      await writeFile(path.join(DATA_DIR, `${plan.id}.json`), JSON.stringify(plan, null, 2), {
+        encoding: "utf-8",
+        flag: "wx",
+      });
+      return plan;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      nextId++;
+    }
+  }
+}
+
 export async function savePlan(plan: Plan): Promise<void> {
   await mkdir(DATA_DIR, { recursive: true });
   const filePath = path.join(DATA_DIR, `${plan.id}.json`);
