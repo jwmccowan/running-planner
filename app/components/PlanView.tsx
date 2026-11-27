@@ -48,7 +48,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
   const [, dispatch, saving] = useActionState(
     async (_: null, toSave: PlanEdits) => {
       await savePlanAction({ ...plan, ...toSave });
-      markSaved();
+      markSaved(toSave);
       return null;
     },
     null
