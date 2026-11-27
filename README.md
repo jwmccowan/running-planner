@@ -19,6 +19,20 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 | `pnpm db:import [files]` | Import plan JSON files into the database |
 | `pnpm db:claim <email> [ids]` | Give unowned plans to a user (who has signed in once) |
 
+## Deployment
+
+Hosted on Vercel with Neon Postgres (Sydney, `syd1`). `vercel.json` runs `pnpm db:migrate && pnpm build`, so each deploy migrates its own database first: production for `main`, and a Neon branch per preview deploy.
+
+| Variable | Production | Preview |
+| --- | --- | --- |
+| `DATABASE_URL`, `DATABASE_URL_UNPOOLED` | set by the Neon integration | set by the Neon integration (per branch) |
+| `BETTER_AUTH_SECRET` | its own value | a different value |
+| `BETTER_AUTH_URL` | production URL | not set (previews accept their own Vercel hostnames) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | production Google client | same client |
+| `OAUTH_PROXY_SECRET` | shared value | same value |
+| `ENABLE_EXPERIMENTAL_COREPACK` | `1` | `1` |
+| `MAX_PLANS_PER_USER`, `TRUSTED_ORIGINS` | optional | optional |
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
