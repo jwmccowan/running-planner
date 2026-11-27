@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import * as UH from "./undo-history";
 
 export function useUndoHistory<T>(initialValue: T) {
   const [history, setHistory] = useState(() => UH.init(initialValue));
-  const savedRef = useRef<T>(initialValue);
+  const [savedValue, setSavedValue] = useState<T>(initialValue);
 
   const set = useCallback((value: T | ((prev: T) => T)) => {
     setHistory((h) => UH.push(h, value));
@@ -17,11 +17,11 @@ export function useUndoHistory<T>(initialValue: T) {
     setHistory(UH.redo);
   }, []);
 
-  const markSaved = useCallback(() => {
-    savedRef.current = history.present;
-  }, [history.present]);
+  const markSaved = useCallback((value: T) => {
+    setSavedValue(value);
+  }, []);
 
-  const isSaved = history.present === savedRef.current;
+  const isSaved = history.present === savedValue;
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
