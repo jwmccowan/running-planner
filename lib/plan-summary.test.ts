@@ -7,7 +7,7 @@ function run(date: string, distance: number, status?: Activity["status"]): Activ
 }
 
 function plan(id: string, startDate: string, weekCount: number, activities: Activity[] = []): Plan {
-  return { id, name: `Plan ${id}`, startDate, weekCount, activities, priorWeeklyDistances: [], blockStarts: [] };
+  return { id, name: `Plan ${id}`, startDate, weekCount, activities, priorWeeklyDistances: [], blockStarts: [], version: 1 };
 }
 
 describe("summarizePlan", () => {

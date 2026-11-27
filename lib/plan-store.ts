@@ -1,81 +1,143 @@
-import { mkdir, readdir, readFile, writeFile } from "fs/promises";
-import path from "path";
-import type { Plan } from "./types";
-import { seedPlan } from "./seed-data";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import type { Db } from "./db";
+import { activities, plans } from "./db/schema";
+import type { Activity, Plan } from "./types";
 
-const DATA_DIR = path.join(process.cwd(), "data", "plans");
-
-export async function loadPlan(id: string): Promise<Plan | null> {
-  const filePath = path.join(DATA_DIR, `${id}.json`);
-  let raw: string;
-  try {
-    raw = await readFile(filePath, "utf-8");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    return id === seedPlan.id ? seedPlan : null;
-  }
-  try {
-    return JSON.parse(raw) as Plan;
-  } catch (error) {
-    throw new Error(`Plan ${id} (${filePath}) is not valid JSON: ${(error as Error).message}`);
+export class PlanConflictError extends Error {
+  constructor(planId: string) {
+    super(`Plan ${planId} was changed or deleted since it was loaded`);
+    this.name = "PlanConflictError";
   }
 }
 
-export type PlanListEntry = { id: string; plan: Plan } | { id: string; error: string };
+type PlanRow = typeof plans.$inferSelect;
+type ActivityRow = typeof activities.$inferSelect;
 
-export async function listPlans(): Promise<PlanListEntry[]> {
-  let files: string[] = [];
-  try {
-    files = await readdir(DATA_DIR);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-  }
-  const ids = files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length));
-  if (!ids.includes(seedPlan.id)) ids.push(seedPlan.id);
+function toActivity(row: ActivityRow): Activity {
+  const base = {
+    id: row.id,
+    name: row.name,
+    date: row.date,
+    distance: row.distance,
+    intenseDistance: row.intenseDistance,
+    ...(row.status ? { status: row.status } : {}),
+  };
+  return row.type === "run"
+    ? { ...base, type: "run", runType: row.runType ?? "easy" }
+    : { ...base, type: "gym" };
+}
 
-  return Promise.all(
-    ids.map(async (id): Promise<PlanListEntry> => {
-      try {
-        const plan = await loadPlan(id);
-        return plan ? { id, plan } : { id, error: `Plan ${id} not found` };
-      } catch (error) {
-        return { id, error: (error as Error).message };
-      }
-    })
+function toActivityRow(planId: string, a: Activity): typeof activities.$inferInsert {
+  return {
+    planId,
+    id: a.id,
+    date: a.date,
+    type: a.type,
+    runType: a.type === "run" ? a.runType : null,
+    name: a.name,
+    distance: a.distance,
+    intenseDistance: a.intenseDistance,
+    status: a.status ?? null,
+  };
+}
+
+function toPlan(row: PlanRow, planActivities: Activity[]): Plan {
+  return {
+    id: row.id,
+    name: row.name,
+    startDate: row.startDate,
+    weekCount: row.weekCount,
+    priorWeeklyDistances: row.priorWeeklyDistances,
+    blockStarts: row.blockStarts,
+    version: row.version,
+    activities: planActivities,
+  };
+}
+
+async function activitiesByPlan(db: Db, planIds: string[]): Promise<Map<string, Activity[]>> {
+  const byPlan = new Map<string, Activity[]>(planIds.map((id) => [id, []]));
+  if (planIds.length === 0) return byPlan;
+  const rows = await db
+    .select()
+    .from(activities)
+    .where(inArray(activities.planId, planIds))
+    .orderBy(asc(activities.date));
+  for (const row of rows) byPlan.get(row.planId)?.push(toActivity(row));
+  return byPlan;
+}
+
+export async function loadPlan(db: Db, id: string): Promise<Plan | null> {
+  const [row] = await db.select().from(plans).where(eq(plans.id, id));
+  if (!row) return null;
+  const byPlan = await activitiesByPlan(db, [id]);
+  return toPlan(row, byPlan.get(id) ?? []);
+}
+
+export async function listPlans(db: Db): Promise<Plan[]> {
+  const rows = await db.select().from(plans);
+  const byPlan = await activitiesByPlan(
+    db,
+    rows.map((r) => r.id)
   );
+  return rows.map((row) => toPlan(row, byPlan.get(row.id) ?? []));
 }
 
 export async function createPlan(
+  db: Db,
   fields: Pick<Plan, "name" | "startDate" | "weekCount">
 ): Promise<Plan> {
-  await mkdir(DATA_DIR, { recursive: true });
-  const files = await readdir(DATA_DIR);
-  const ids = [seedPlan.id, ...files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -".json".length))];
-  let nextId = Math.max(0, ...ids.map(Number).filter(Number.isInteger)) + 1;
-
-  for (;;) {
-    const plan: Plan = {
-      id: String(nextId),
-      ...fields,
-      activities: [],
-      priorWeeklyDistances: [],
-      blockStarts: [],
-    };
-    try {
-      await writeFile(path.join(DATA_DIR, `${plan.id}.json`), JSON.stringify(plan, null, 2), {
-        encoding: "utf-8",
-        flag: "wx",
-      });
-      return plan;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
-      nextId++;
-    }
-  }
+  const [row] = await db
+    .insert(plans)
+    .values({ id: crypto.randomUUID(), ...fields })
+    .returning();
+  return toPlan(row, []);
 }
 
-export async function savePlan(plan: Plan): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
-  const filePath = path.join(DATA_DIR, `${plan.id}.json`);
-  await writeFile(filePath, JSON.stringify(plan, null, 2), "utf-8");
+// Saves only if the plan is still at plan.version; returns the new version.
+export async function savePlan(db: Db, plan: Plan): Promise<number> {
+  return db.transaction(async (tx) => {
+    const updated = await tx
+      .update(plans)
+      .set({
+        name: plan.name,
+        startDate: plan.startDate,
+        weekCount: plan.weekCount,
+        priorWeeklyDistances: plan.priorWeeklyDistances,
+        blockStarts: plan.blockStarts,
+        version: sql`${plans.version} + 1`,
+        updatedAt: sql`now()`,
+      })
+      .where(and(eq(plans.id, plan.id), eq(plans.version, plan.version)))
+      .returning({ version: plans.version });
+    if (updated.length === 0) throw new PlanConflictError(plan.id);
+
+    await tx.delete(activities).where(eq(activities.planId, plan.id));
+    if (plan.activities.length > 0) {
+      await tx.insert(activities).values(plan.activities.map((a) => toActivityRow(plan.id, a)));
+    }
+    return updated[0].version;
+  });
+}
+
+// Inserts a plan with its existing ID (used to import plan files). Returns false if it already exists.
+export async function importPlan(db: Db, plan: Omit<Plan, "version">): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const inserted = await tx
+      .insert(plans)
+      .values({
+        id: plan.id,
+        name: plan.name,
+        startDate: plan.startDate,
+        weekCount: plan.weekCount,
+        priorWeeklyDistances: plan.priorWeeklyDistances,
+        blockStarts: plan.blockStarts,
+      })
+      .onConflictDoNothing()
+      .returning({ id: plans.id });
+    if (inserted.length === 0) return false;
+    if (plan.activities.length > 0) {
+      await tx.insert(activities).values(plan.activities.map((a) => toActivityRow(plan.id, a)));
+    }
+    return true;
+  });
 }

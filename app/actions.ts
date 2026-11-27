@@ -2,11 +2,19 @@
 
 import { redirect } from "next/navigation";
 import type { Plan } from "@/lib/types";
-import { createPlan, savePlan } from "@/lib/plan-store";
+import { getDb } from "@/lib/db";
+import { createPlan, PlanConflictError, savePlan } from "@/lib/plan-store";
 import { isMonday } from "@/lib/plan-settings";
 
-export async function savePlanAction(plan: Plan): Promise<void> {
-  await savePlan(plan);
+export type SavePlanResult = { ok: true; version: number } | { ok: false; reason: "conflict" };
+
+export async function savePlanAction(plan: Plan): Promise<SavePlanResult> {
+  try {
+    return { ok: true, version: await savePlan(getDb(), plan) };
+  } catch (error) {
+    if (error instanceof PlanConflictError) return { ok: false, reason: "conflict" };
+    throw error;
+  }
 }
 
 export async function createPlanAction(
@@ -20,6 +28,6 @@ export async function createPlanAction(
   if (!Number.isInteger(fields.weekCount) || fields.weekCount < 1) {
     throw new Error("Weeks must be a whole number of at least 1");
   }
-  const plan = await createPlan({ ...fields, name });
+  const plan = await createPlan(getDb(), { ...fields, name });
   redirect(`/plans/${plan.id}`);
 }
