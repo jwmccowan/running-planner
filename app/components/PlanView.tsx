@@ -14,6 +14,8 @@ import { AddBlockGap, BlockBar, BLOCK_MIME } from "./BlockBar";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+type SaveState = { version: number; conflict: boolean };
+
 type PlanEdits = Pick<
   Plan,
   "name" | "startDate" | "weekCount" | "activities" | "priorWeeklyDistances" | "blockStarts"
@@ -45,13 +47,14 @@ export default function PlanView({ plan }: { plan: Plan }) {
   const [editingBlocks, setEditingBlocks] = useState(false);
   const [draggingBlock, setDraggingBlock] = useState<string | null>(null);
   const [blockDropTarget, setBlockDropTarget] = useState<string | null>(null);
-  const [, dispatch, saving] = useActionState(
-    async (_: null, toSave: PlanEdits) => {
-      await savePlanAction({ ...plan, ...toSave });
+  const [saveState, dispatch, saving] = useActionState(
+    async (prev: SaveState, toSave: PlanEdits): Promise<SaveState> => {
+      const result = await savePlanAction({ ...plan, ...toSave, version: prev.version });
+      if (!result.ok) return { ...prev, conflict: true };
       markSaved(toSave);
-      return null;
+      return { version: result.version, conflict: false };
     },
-    null
+    { version: plan.version, conflict: false }
   );
 
   const summaries = computeWeekSummaries(activities, startDate, weekCount, priorWeeklyDistances);
@@ -197,12 +200,26 @@ export default function PlanView({ plan }: { plan: Plan }) {
         </button>
         <button
           onClick={() => startTransition(() => dispatch(edits))}
-          disabled={saved || saving}
+          disabled={saved || saving || saveState.conflict}
           className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? "Saving…" : saved ? "Saved" : "Save"}
         </button>
       </div>
+      {saveState.conflict && (
+        <div className="mb-4 text-sm border border-red-200 bg-red-50 rounded p-3 flex items-center gap-3">
+          <p className="text-red-700">
+            This plan was changed somewhere else since you opened it, so your changes weren&apos;t
+            saved. Reload to get the latest version. Unsaved changes here will be lost.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="ml-auto px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 whitespace-nowrap"
+          >
+            Reload
+          </button>
+        </div>
+      )}
       <div className="grid gap-px mb-1" style={{ gridTemplateColumns: 'minmax(0, 1.5fr) repeat(7, minmax(0, 1fr))' }}>
         <div />
         {DAYS.map((day) => (

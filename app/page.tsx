@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { getDb } from "@/lib/db";
 import { listPlans } from "@/lib/plan-store";
 import NewPlanButton from "@/app/components/NewPlanButton";
 import { sortPlanSummaries, summarizePlan, type PlanStatus } from "@/lib/plan-summary";
@@ -34,13 +35,9 @@ function formatKm(km: number): string {
 
 export default async function Home() {
   await connection();
-  const entries = await listPlans();
+  const plans = await listPlans(getDb());
   const today = new Date().toLocaleDateString("en-CA");
-
-  const summaries = sortPlanSummaries(
-    entries.flatMap((e) => ("plan" in e ? [summarizePlan(e.plan, today)] : []))
-  );
-  const broken = entries.flatMap((e) => ("error" in e ? [e] : []));
+  const summaries = sortPlanSummaries(plans.map((p) => summarizePlan(p, today)));
 
   return (
     <div className="p-6 max-w-2xl">
@@ -49,7 +46,7 @@ export default async function Home() {
         <NewPlanButton />
       </div>
 
-      {summaries.length === 0 && broken.length === 0 && (
+      {summaries.length === 0 && (
         <p className="text-sm text-zinc-500">No plans yet.</p>
       )}
 
@@ -70,17 +67,6 @@ export default async function Home() {
                 {formatRange(s.startDate, s.endDate)} · {s.weekCount}{" "}
                 {s.weekCount === 1 ? "week" : "weeks"} · {formatKm(s.totalDistance)}
               </div>
-            </Link>
-          </li>
-        ))}
-        {broken.map((b) => (
-          <li key={b.id}>
-            <Link
-              href={`/plans/${b.id}`}
-              className="block border border-red-200 bg-red-50 rounded p-3 hover:bg-red-100"
-            >
-              <div className="font-semibold text-red-800">Plan {b.id} couldn&apos;t be loaded</div>
-              <div className="text-sm text-red-700 mt-0.5 break-words">{b.error}</div>
             </Link>
           </li>
         ))}

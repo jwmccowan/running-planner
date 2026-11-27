@@ -1,24 +1,22 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Local development
 
-First, run the development server:
+1. **Postgres.** Run Postgres however you like and create a database, e.g.
+   - Homebrew: `brew install postgresql@17 && brew services start postgresql@17 && createdb running_planner`
+   - Docker: `docker run -d --name running-planner-pg -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=running_planner postgres:17`
+2. **Config.** `cp .env.example .env.local` and set `DATABASE_URL`.
+3. **Install and migrate.** `pnpm install`, then `pnpm db:migrate`.
+4. **Import existing plan files** (optional): `pnpm db:import` loads `data/plans/*.json`, keeping their IDs.
+5. **Run.** `pnpm dev` and open [http://localhost:3000](http://localhost:3000).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | What it does |
+| --- | --- |
+| `pnpm test` | Unit and storage tests. Storage tests run on PGlite (in-process Postgres), so no database is needed |
+| `pnpm lint`, `pnpm exec tsc --noEmit` | Lint and typecheck (also run in CI) |
+| `pnpm db:generate` | Create a migration in `drizzle/` after changing `lib/db/schema.ts` |
+| `pnpm db:migrate` | Apply migrations to `DATABASE_URL` |
+| `pnpm db:import [files]` | Import plan JSON files into the database |
 
 ## Learn More
 

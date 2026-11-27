@@ -25,6 +25,7 @@ export type Plan = {
   activities: Activity[];
   priorWeeklyDistances: number[]; // up to 4 weekly totals before startDate, oldest first
   blockStarts: string[]; // ISO Mondays where a new block begins
+  version: number; // increments on every save; a save from an older version is rejected
 };
 
 export type WeekStats = {
