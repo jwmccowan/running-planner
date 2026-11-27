@@ -42,7 +42,7 @@ export default function WeekRow({
   return (
     <div
       data-week-start={summary.startDate}
-      className="grid gap-px"
+      className="hidden md:grid gap-px"
       style={{ gridTemplateColumns: 'minmax(0, 1.3fr) repeat(7, minmax(0, 1fr))' }}
     >
       <div

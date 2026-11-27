@@ -82,11 +82,11 @@ export default function PlanSettingsModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+        className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-full overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-base font-semibold mb-4">
@@ -101,7 +101,7 @@ export default function PlanSettingsModal({
               onChange={(e) => setName(e.target.value)}
               autoFocus={mode === "create"}
               maxLength={limits.maxNameLength}
-              className="flex-1 border border-zinc-300 rounded px-2 py-0.5 text-sm"
+              className="flex-1 min-w-0 border border-zinc-300 rounded px-2 py-0.5 text-sm"
             />
           </div>
           {name !== "" && !nameValid && <p className="text-red-600">Name can&apos;t be empty.</p>}
@@ -128,7 +128,7 @@ export default function PlanSettingsModal({
             </label>
           )}
 
-          <div className="flex gap-3 items-center">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 items-center">
             <label className="text-zinc-500 w-24">Weeks</label>
             <input
               type="number"

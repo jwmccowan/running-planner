@@ -45,16 +45,16 @@ export default async function Home() {
   const summaries = sortPlanSummaries(plans.map((p) => summarizePlan(p, today)));
 
   return (
-    <div className="p-6 max-w-2xl">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="p-4 md:p-6 max-w-2xl">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
         <h1 className="text-xl font-bold">Running Planner</h1>
         <NewPlanButton
           disabledReason={
             atPlanLimit ? `You can have up to ${maxPlansPerUser()} plans for now.` : undefined
           }
         />
-        <div className="ml-auto flex items-center gap-2 text-sm text-zinc-500">
-          <span>{user.email}</span>
+        <div className="w-full md:w-auto md:ml-auto flex items-center gap-2 text-sm text-zinc-500 min-w-0">
+          <span className="truncate">{user.email}</span>
           <SignOutButton />
         </div>
       </div>

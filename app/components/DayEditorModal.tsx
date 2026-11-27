@@ -112,11 +112,11 @@ export default function DayEditorModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md"
+        className="bg-white rounded-lg shadow-xl p-4 md:p-6 w-full max-w-md max-h-full overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-base font-semibold mb-4">{formatDate(date)}</h2>

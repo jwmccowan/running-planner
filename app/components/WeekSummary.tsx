@@ -1,7 +1,7 @@
 import { config } from "@/lib/config";
 import type { WeekSummary as WeekSummaryType } from "@/lib/types";
 
-function formatRange(start: string, end: string): string {
+export function formatRange(start: string, end: string): string {
   const s = new Date(start + "T00:00:00Z");
   const e = new Date(end + "T00:00:00Z");
   const fmt = (d: Date) =>
@@ -13,18 +13,18 @@ function formatRange(start: string, end: string): string {
   return `${fmt(s)} – ${fmt(e)}`;
 }
 
-function formatNum(n: number): string {
+export function formatNum(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
 }
 
 // Green inside the ideal range, red outside, neutral when there's no history to compare against
-function acuteColor(summary: WeekSummaryType): string {
+export function acuteColor(summary: WeekSummaryType): string {
   if (!summary.idealAcuteRange) return "text-zinc-700";
   const [low, high] = summary.idealAcuteRange;
   return summary.acuteDistance >= low && summary.acuteDistance <= high ? "text-green-700" : "text-red-600";
 }
 
-function AddPriorWeeksPrompt({ onClick }: { onClick: () => void }) {
+export function AddPriorWeeksPrompt({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={(e) => {
@@ -63,7 +63,8 @@ function CompactWeekSummary({
   );
 }
 
-function ExpandedWeekSummary({
+// The stat lines of an expanded week (shared by the desktop summary column and the phone week card)
+export function WeekStats({
   summary,
   onAddPriorWeeks,
 }: {
@@ -80,10 +81,7 @@ function ExpandedWeekSummary({
       : "";
 
   return (
-    <div className="text-sm leading-relaxed py-2 pr-4">
-      <div className="font-semibold text-zinc-900">
-        {formatRange(summary.startDate, summary.endDate)}
-      </div>
+    <>
       <div className="text-zinc-800">
         Chronic distance:{" "}
         {summary.chronicDistance === null ? "—" : formatNum(summary.chronicDistance)}
@@ -102,6 +100,23 @@ function ExpandedWeekSummary({
       <div className={easyEnough ? "text-green-700" : "text-red-600"}>
         Percent easy: {Math.round(summary.percentEasy)}%
       </div>
+    </>
+  );
+}
+
+function ExpandedWeekSummary({
+  summary,
+  onAddPriorWeeks,
+}: {
+  summary: WeekSummaryType;
+  onAddPriorWeeks?: () => void;
+}) {
+  return (
+    <div className="text-sm leading-relaxed py-2 pr-4">
+      <div className="font-semibold text-zinc-900">
+        {formatRange(summary.startDate, summary.endDate)}
+      </div>
+      <WeekStats summary={summary} onAddPriorWeeks={onAddPriorWeeks} />
     </div>
   );
 }
