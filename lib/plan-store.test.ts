@@ -9,6 +9,7 @@ import {
   claimUnownedPlans,
   countOwnedPlans,
   createPlan,
+  deletePlan,
   findUserIdByEmail,
   importPlan,
   listPlans,
@@ -245,5 +246,42 @@ describe("findUserIdByEmail", () => {
   it("matches emails case-insensitively", async () => {
     expect(await findUserIdByEmail(db, "alice@example.com")).toBe(ALICE);
     expect(await findUserIdByEmail(db, "nobody@example.com")).toBeNull();
+  });
+});
+
+describe("deletePlan", () => {
+  it("lets the owner delete a plan, with its activities and memberships", async () => {
+    const plan = await createPlan(db, fields, ALICE);
+    await savePlan(db, { ...plan, activities: [run("a", "2026-12-08", 6)] }, ALICE);
+    await db.insert(schema.planMembers).values({ planId: plan.id, userId: BOB, role: "editor" });
+
+    await deletePlan(db, plan.id, ALICE);
+
+    expect(await loadPlan(db, plan.id, ALICE)).toBeNull();
+    expect(await loadPlan(db, plan.id, BOB)).toBeNull();
+    expect((await db.select().from(schema.activities)).length).toBe(0);
+    expect((await db.select().from(schema.planMembers)).length).toBe(0);
+  });
+
+  it("refuses editors, viewers and strangers, and leaves the plan alone", async () => {
+    const plan = await createPlan(db, fields, ALICE);
+    await db.insert(schema.planMembers).values({ planId: plan.id, userId: BOB, role: "editor" });
+    await expect(deletePlan(db, plan.id, BOB)).rejects.toThrow(PlanNotFoundError);
+    await db.update(schema.planMembers).set({ role: "viewer" }).where(sql`user_id = ${BOB}`);
+    await expect(deletePlan(db, plan.id, BOB)).rejects.toThrow(PlanNotFoundError);
+    await expect(deletePlan(db, plan.id, "stranger")).rejects.toThrow(PlanNotFoundError);
+    expect(await loadPlan(db, plan.id, ALICE)).not.toBeNull();
+  });
+
+  it("frees a slot under the plan limit", async () => {
+    await createPlan(db, fields, ALICE);
+    const second = await createPlan(db, fields, ALICE);
+    await expect(createPlan(db, fields, ALICE)).rejects.toThrow(PlanLimitError);
+    await deletePlan(db, second.id, ALICE);
+    await expect(createPlan(db, fields, ALICE)).resolves.toBeDefined();
+  });
+
+  it("reports a missing plan as not found", async () => {
+    await expect(deletePlan(db, "missing", ALICE)).rejects.toThrow(PlanNotFoundError);
   });
 });

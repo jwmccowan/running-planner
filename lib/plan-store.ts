@@ -139,6 +139,20 @@ export async function createPlan(
   });
 }
 
+// Only the owner can delete a plan; its activities and memberships go with it (cascade).
+export async function deletePlan(db: Db, planId: string, userId: string): Promise<void> {
+  const deleted = await db
+    .delete(plans)
+    .where(
+      and(
+        eq(plans.id, planId),
+        sql`exists (select 1 from ${planMembers} where ${planMembers.planId} = ${plans.id} and ${planMembers.userId} = ${userId} and ${planMembers.role} = 'owner')`
+      )
+    )
+    .returning({ id: plans.id });
+  if (deleted.length === 0) throw new PlanNotFoundError(planId);
+}
+
 // Saves only if you can edit the plan and it's still at plan.version; returns the new version.
 export async function savePlan(db: Db, plan: Plan, userId: string): Promise<number> {
   return db.transaction(async (tx) => {

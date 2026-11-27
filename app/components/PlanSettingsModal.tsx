@@ -33,12 +33,17 @@ export default function PlanSettingsModal({
   current,
   onSave,
   onClose,
+  onDelete,
+  deleting = false,
 }: {
   mode?: "edit" | "create";
   current: PlanSettingsFields & Pick<Plan, "name">;
   onSave: (updated: PlanSettingsFields & Pick<Plan, "name">) => void;
   onClose: () => void;
+  onDelete?: () => void;
+  deleting?: boolean;
 }) {
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [name, setName] = useState(current.name);
   const [startDate, setStartDate] = useState(current.startDate);
   const [weeks, setWeeks] = useState(String(current.weekCount));
@@ -161,27 +166,62 @@ export default function PlanSettingsModal({
           </div>
         )}
 
-        <div className="flex justify-end gap-2 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-1.5 text-sm text-zinc-600 hover:text-zinc-900"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!preview || !nameValid}
-            className={`px-4 py-1.5 text-sm text-white rounded disabled:opacity-40 disabled:cursor-not-allowed ${
-              removed.length > 0 ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
-            }`}
-          >
-            {mode === "create"
-              ? "Create plan"
-              : removed.length === 0
-              ? "Save"
-              : `Save and delete ${removed.length} ${removed.length === 1 ? "activity" : "activities"}`}
-          </button>
-        </div>
+        {confirmingDelete && onDelete ? (
+          <div className="mt-6 text-sm border border-red-200 bg-red-50 rounded p-3">
+            <p className="text-red-700">
+              Delete &ldquo;{current.name}&rdquo;?{" "}
+              {current.activities.length > 0 &&
+                `Its ${current.activities.length} ${current.activities.length === 1 ? "activity" : "activities"} will be deleted too. `}
+              This can&apos;t be undone.
+            </p>
+            <div className="flex justify-end gap-2 mt-3">
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                disabled={deleting}
+                className="px-4 py-1.5 text-sm text-zinc-600 hover:text-zinc-900"
+              >
+                Keep plan
+              </button>
+              <button
+                onClick={onDelete}
+                disabled={deleting}
+                className="px-4 py-1.5 text-sm text-white rounded bg-red-600 hover:bg-red-700 disabled:opacity-40"
+              >
+                {deleting ? "Deleting…" : "Delete plan"}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2 mt-6">
+            {onDelete && (
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="mr-auto px-2 py-1.5 text-sm text-red-600 hover:text-red-800"
+              >
+                Delete plan
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="px-4 py-1.5 text-sm text-zinc-600 hover:text-zinc-900"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={!preview || !nameValid}
+              className={`px-4 py-1.5 text-sm text-white rounded disabled:opacity-40 disabled:cursor-not-allowed ${
+                removed.length > 0 ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"
+              }`}
+            >
+              {mode === "create"
+                ? "Create plan"
+                : removed.length === 0
+                ? "Save"
+                : `Save and delete ${removed.length} ${removed.length === 1 ? "activity" : "activities"}`}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
