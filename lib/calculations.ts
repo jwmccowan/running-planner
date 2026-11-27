@@ -81,7 +81,7 @@ export function computeWeekSummaries(
     const chronicDistance =
       prevDistances.length > 0
         ? prevDistances.reduce((sum, d) => sum + d, 0) / prevDistances.length
-        : stats.acuteDistance;
+        : null;
 
     const prev = i > 0 ? weekStats[i - 1] : null;
 
@@ -99,14 +99,17 @@ export function computeWeekSummaries(
     return {
       ...stats,
       chronicDistance,
-      idealAcuteRange: [
-        chronicDistance * config.acuteRangeLow,
-        chronicDistance * config.acuteRangeHigh,
-      ] as [number, number],
+      chronicWeeks: prevDistances.length,
+      idealAcuteRange:
+        chronicDistance === null
+          ? null
+          : ([chronicDistance * config.acuteRangeLow, chronicDistance * config.acuteRangeHigh] as [number, number]),
       acuteVsChronicChange:
-        chronicDistance > 0
-          ? ((stats.acuteDistance - chronicDistance) / chronicDistance) * 100
-          : 0,
+        chronicDistance === null
+          ? null
+          : chronicDistance > 0
+            ? ((stats.acuteDistance - chronicDistance) / chronicDistance) * 100
+            : 0,
       weekOverWeekChange:
         prev && prev.acuteDistance > 0
           ? ((stats.acuteDistance - prev.acuteDistance) / prev.acuteDistance) *

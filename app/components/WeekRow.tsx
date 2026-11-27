@@ -17,6 +17,7 @@ export default function WeekRow({
   dayOffset,
   expanded,
   onToggle,
+  onAddPriorWeeks,
   onDayEdit,
   onStatusChange,
   onActivityMove,
@@ -26,6 +27,7 @@ export default function WeekRow({
   dayOffset: number;
   expanded: boolean;
   onToggle: () => void;
+  onAddPriorWeeks?: () => void;
   onDayEdit: (date: string) => void;
   onStatusChange: (activityId: string, status: ActivityStatus | undefined) => void;
   onActivityMove: (activityId: string, date: string) => void;
@@ -47,7 +49,7 @@ export default function WeekRow({
         className="cursor-pointer hover:bg-zinc-50 rounded"
         onClick={onToggle}
       >
-        <WeekSummary summary={summary} expanded={expanded} />
+        <WeekSummary summary={summary} expanded={expanded} onAddPriorWeeks={onAddPriorWeeks} />
       </div>
       {DAYS.map((_, i) => {
         const date = addDays(summary.startDate, i);

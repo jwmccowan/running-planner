@@ -70,6 +70,10 @@ All calculations operate on **running activities only** (type: "run").
 | Longest run vs prev week  | Current longest − Previous week's longest                      |
 | Longest run vs 4-wk avg   | Current longest − Average of longest runs over previous 4 weeks |
 
+- "Previous weeks" include the plan's prior weekly distances, so week 1 can have history.
+- With fewer than 4 earlier weeks, chronic distance averages those that exist and the summary says how many (e.g. "(2 wks)").
+- With no earlier weeks, chronic distance, the ideal range and the acute-vs-chronic change are shown as "—", acute distance isn't coloured, and week 1 prompts to add prior weeks.
+
 ### Configuration
 
 The following values should be defined centrally so they're easy to change:
