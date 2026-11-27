@@ -11,7 +11,8 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:import": "tsx scripts/import-plans.mts",
-    "db:claim": "tsx scripts/claim-plans.mts"
+    "db:claim": "tsx scripts/claim-plans.mts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "better-auth": "1.7.23",
@@ -23,6 +24,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.16",
+    "@playwright/test": "1.65.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "8.23.1",

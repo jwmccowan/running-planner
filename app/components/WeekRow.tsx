@@ -38,7 +38,11 @@ export default function WeekRow({
   }
 
   return (
-    <div className="grid gap-px" style={{ gridTemplateColumns: 'minmax(0, 1.3fr) repeat(7, minmax(0, 1fr))' }}>
+    <div
+      data-week-start={summary.startDate}
+      className="grid gap-px"
+      style={{ gridTemplateColumns: 'minmax(0, 1.3fr) repeat(7, minmax(0, 1fr))' }}
+    >
       <div
         className="cursor-pointer hover:bg-zinc-50 rounded"
         onClick={onToggle}

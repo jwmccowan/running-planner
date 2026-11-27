@@ -13,11 +13,23 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 | Command | What it does |
 | --- | --- |
 | `pnpm test` | Unit and storage tests. Storage tests run on PGlite (in-process Postgres), so no database is needed |
+| `pnpm test:e2e` | Playwright browser tests against a production build on port 3100 (see below) |
 | `pnpm lint`, `pnpm exec tsc --noEmit` | Lint and typecheck (also run in CI) |
 | `pnpm db:generate` | Create a migration in `drizzle/` after changing `lib/db/schema.ts` |
 | `pnpm db:migrate` | Apply migrations to `DATABASE_URL` |
 | `pnpm db:import [files]` | Import plan JSON files into the database |
 | `pnpm db:claim <email> [ids]` | Give unowned plans to a user (who has signed in once) |
+
+## Browser tests
+
+`pnpm test:e2e` builds the app, starts it on port 3100 and runs the Playwright tests in `e2e/` (files named `*.e2e.ts`).
+
+- **Database:** a separate test database, emptied and migrated before each run. Create it once with `createdb running_planner_test`, or point `E2E_DATABASE_URL` at another database whose name contains "test" (the tests refuse anything else).
+- **Browser:** `pnpm exec playwright install chromium` once.
+- **Signing in:** tests create users and sessions with Better Auth's `testUtils` (`e2e/support/fixtures.ts`), a test-only auth setup that the app never loads. No Google account needed.
+- **Your dev server:** stop `pnpm dev` first, since both use `.next`.
+
+CI runs the same tests in an `e2e` job with a Postgres service and uploads the Playwright report when they fail.
 
 ## Deployment
 

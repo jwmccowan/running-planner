@@ -174,6 +174,7 @@ export default function DayCell({
   if (expanded) {
     return (
       <div
+        data-date={date}
         onClick={handleClick}
         {...dropProps}
         className={`h-full cursor-pointer hover:ring-1 hover:ring-blue-300 rounded ${dropRing}`}
@@ -189,6 +190,7 @@ export default function DayCell({
   }
   return (
     <div
+      data-date={date}
       onClick={handleClick}
       {...dropProps}
       className={`cursor-pointer hover:bg-zinc-100 rounded ${dropRing}`}
