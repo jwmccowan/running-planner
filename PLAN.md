@@ -20,7 +20,7 @@
 | 6c | Accounts (Better Auth, Google sign-in) + plan membership | done | PR #18 |
 | 6c+ | Plan size limits, CI build + migration drift checks | done | PR #19, #20 |
 | 6d | Deploy (Vercel + Neon)    | done | PR #21 |
-| 6e | Browser tests (Playwright in CI) | todo |         |
+| 6e | Browser tests (Playwright in CI) | in progress | `test/e2e` |
 | 7  | Polish (color, layout)    | todo   |             |
 
 ## Decisions
