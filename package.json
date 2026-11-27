@@ -10,9 +10,11 @@
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:import": "tsx scripts/import-plans.mts"
+    "db:import": "tsx scripts/import-plans.mts",
+    "db:claim": "tsx scripts/claim-plans.mts"
   },
   "dependencies": {
+    "better-auth": "1.7.23",
     "drizzle-orm": "0.45.4",
     "next": "16.2.2",
     "pg": "8.23.1",

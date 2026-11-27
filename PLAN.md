@@ -16,8 +16,8 @@
 | 5e | Plan settings (name, start, length) | done | PR #13 |
 | 5f | Home page + New plan      | done   | PR #14, #15 |
 | 6a | CI (typecheck, lint, unit tests) | done | PR #16 |
-| 6b | Postgres storage (Drizzle) + import of local plans | in progress | `feat/postgres` |
-| 6c | Accounts (Better Auth, Google sign-in) + plan membership | todo | |
+| 6b | Postgres storage (Drizzle) + import of local plans | done | PR #17 |
+| 6c | Accounts (Better Auth, Google sign-in) + plan membership | in progress | `feat/accounts-pg` |
 | 6d | Deploy (Vercel + Neon)    | todo   |             |
 | 6e | Browser tests (Playwright in CI) | todo |         |
 | 7  | Polish (color, layout)    | todo   |             |
@@ -58,7 +58,7 @@ activities     id, plan_id, date, type, run_type, name, distance,
 
 - **6a CI**: GitHub Actions on every PR and push to main: typecheck, lint, vitest.
 - **6b Postgres storage**: Drizzle schema + migrations, `lib/plan-store.ts` rewritten on Postgres with the version check, storage tests on PGlite, and `scripts/import-plans` to load `data/plans/*.json`. Same single-user behaviour as today.
-- **6c Accounts**: Better Auth (Drizzle adapter) with Google sign-in, sign-in page, `plan_members` with ownership checks in every page and server action, plan cap. Import/claim assigns existing plans to your user by email. Reuses the parked file-store accounts work (`git stash list`).
+- **6c Accounts**: Better Auth (Drizzle adapter) with Google sign-in, sign-in page, `plan_members` with ownership checks in every page and server action, plan cap. Import/claim assigns existing plans to your user by email. Ownership is a `plan_members` row with `role: "owner"`; users and sessions are Better Auth's tables. `pnpm db:claim <email> [ids]` gives unowned (imported) plans to a user who has signed in once. Pages and server actions check membership server-side (no `proxy.ts`; Next's docs treat proxy as an optimistic check only).
 - **6d Deploy**: Vercel project + Neon integration (prod database, branch per preview), production Google client, Better Auth `oAuthProxy` so sign-in works on preview URLs, staging domain.
 - **6e Browser tests**: Playwright against a production build, logging in via `testUtils`; smoke tests against staging after deploy.
 

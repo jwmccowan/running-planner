@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { getDb } from "@/lib/db";
-import { listPlans } from "@/lib/plan-store";
+import { countOwnedPlans, listPlans, maxPlansPerUser } from "@/lib/plan-store";
+import { requireUser } from "@/lib/session";
 import NewPlanButton from "@/app/components/NewPlanButton";
+import SignOutButton from "@/app/components/SignOutButton";
 import { sortPlanSummaries, summarizePlan, type PlanStatus } from "@/lib/plan-summary";
 
 const STATUS_LABEL: Record<PlanStatus, string> = {
@@ -35,7 +37,10 @@ function formatKm(km: number): string {
 
 export default async function Home() {
   await connection();
-  const plans = await listPlans(getDb());
+  const user = await requireUser();
+  const db = getDb();
+  const plans = await listPlans(db, user.id);
+  const atPlanLimit = (await countOwnedPlans(db, user.id)) >= maxPlansPerUser();
   const today = new Date().toLocaleDateString("en-CA");
   const summaries = sortPlanSummaries(plans.map((p) => summarizePlan(p, today)));
 
@@ -43,7 +48,15 @@ export default async function Home() {
     <div className="p-6 max-w-2xl">
       <div className="flex items-center gap-4 mb-4">
         <h1 className="text-xl font-bold">Running Planner</h1>
-        <NewPlanButton />
+        <NewPlanButton
+          disabledReason={
+            atPlanLimit ? `You can have up to ${maxPlansPerUser()} plans for now.` : undefined
+          }
+        />
+        <div className="ml-auto flex items-center gap-2 text-sm text-zinc-500">
+          <span>{user.email}</span>
+          <SignOutButton />
+        </div>
       </div>
 
       {summaries.length === 0 && (
