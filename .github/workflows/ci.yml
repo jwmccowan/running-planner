@@ -18,3 +18,22 @@ jobs:
       - run: pnpm exec tsc --noEmit
       - run: pnpm lint
       - run: pnpm test
+
+      - name: Migrations match schema
+        run: |
+          pnpm exec drizzle-kit generate --name ci_drift_check
+          if [ -n "$(git status --porcelain -- drizzle)" ]; then
+            echo "::error::lib/db/schema.ts has changes without a migration. Run pnpm db:generate and commit the result."
+            git status --porcelain -- drizzle
+            exit 1
+          fi
+
+      - name: Build
+        run: pnpm build
+        env:
+          # Placeholders so the build can load the auth config; nothing connects to them
+          DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+          BETTER_AUTH_SECRET: ci-build-only-placeholder-not-a-real-secret
+          BETTER_AUTH_URL: http://localhost:3000
+          GOOGLE_CLIENT_ID: ci-placeholder
+          GOOGLE_CLIENT_SECRET: ci-placeholder
