@@ -18,7 +18,7 @@
 - **Persistence**: AWS DynamoDB (not localStorage)
 - **Node version**: 22 via mise (required by vitest 4)
 - **Gym tracking**: out of scope for v1 — model supports it, UI ignores it
-- **Blocks**: 4-week visual grouping, cosmetic only in v1
+- **Blocks**: user-defined via `blockStarts` (ISO Mondays), edited in an "Edit blocks" mode; cosmetic only (no effect on calculations)
 - **Future features to keep in mind**: move workouts, bulk updates, copy/paste, undo (don't design these out)
 - **Activity status**: `status?: "completed" | "missed"` on Activity (undefined = pending). Missed activities excluded from all load calculations.
 

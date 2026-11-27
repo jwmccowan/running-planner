@@ -30,7 +30,18 @@ A Monday-to-Sunday window. Derived from activities, not stored separately.
 
 ### Plan
 
-The top-level object. A plan has a `startDate` (a Monday) and a flat list of activities. Weeks are derived by grouping activities by their date.
+The top-level object. Weeks are derived by grouping activities by their date.
+
+| Field                  | Type       | Description                                                               |
+| ---------------------- | ---------- | ------------------------------------------------------------------------- |
+| `id`                   | string     | Unique identifier                                                         |
+| `name`                 | string     | Display name, e.g. "2027 Summer build"                                    |
+| `startDate`            | string     | ISO date of the plan's first Monday                                       |
+| `activities`           | Activity[] | Flat list of all activities in the plan                                   |
+| `priorWeeklyDistances` | number[]   | Up to 4 weekly totals (km) before `startDate`, oldest first               |
+| `blockStarts`          | string[]   | ISO Mondays where a new block begins (see [Blocks](#blocks))              |
+
+- `priorWeeklyDistances` gives the early weeks enough history for chronic distance. It's edited from the **Prior weeks** dialog in the plan header.
 
 ## Calculations
 
@@ -109,4 +120,11 @@ These are not part of v1 but the data model and state management should not prec
 
 ## Blocks
 
-The spreadsheet organizes weeks into 4-week blocks (mesocycles), visually separated. The plan view should preserve this grouping — every 4 weeks gets a visual separator. This is purely cosmetic in v1 (no block-level data or editing).
+Weeks are grouped into blocks (mesocycles), visually separated by a grey bar. Blocks can be any length.
+
+- A plan stores `blockStarts`: the ISO Mondays where a new block begins. The first week of the plan never has a bar.
+- Bars are edited in an **Edit blocks** mode, toggled from the plan header. Outside the mode, bars are plain separators with no controls.
+- In the mode, the user can add a bar in any gap between weeks, remove a bar, or drag a bar to another week. A bar can't be dropped on the first week or on a week that already has one.
+- Block edits share the undo history and save state with other plan edits.
+
+Blocks are cosmetic: they don't affect any calculations, and there is no block-level data beyond where each block starts.
