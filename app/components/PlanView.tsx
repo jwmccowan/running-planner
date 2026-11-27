@@ -7,33 +7,45 @@ import { useUndoHistory } from "@/lib/use-undo-history";
 import { savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
 import DayEditorModal from "./DayEditorModal";
+import PriorWeeksModal from "./PriorWeeksModal";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+type PlanEdits = Pick<Plan, "activities" | "priorWeeklyDistances">;
+
 export default function PlanView({ plan }: { plan: Plan }) {
   const {
-    value: activities,
-    set: setActivities,
+    value: edits,
+    set: setEdits,
     undo,
     redo,
     canUndo,
     canRedo,
     isSaved: saved,
     markSaved,
-  } = useUndoHistory<Activity[]>(plan.activities);
+  } = useUndoHistory<PlanEdits>({
+    activities: plan.activities,
+    priorWeeklyDistances: plan.priorWeeklyDistances ?? [],
+  });
+  const { activities, priorWeeklyDistances } = edits;
   const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [editingPriorWeeks, setEditingPriorWeeks] = useState(false);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [, dispatch, saving] = useActionState(
-    async (_: null, toSave: Activity[]) => {
-      await savePlanAction({ ...plan, activities: toSave });
+    async (_: null, toSave: PlanEdits) => {
+      await savePlanAction({ ...plan, ...toSave });
       markSaved();
       return null;
     },
     null
   );
 
-  const summaries = computeWeekSummaries(activities, plan.priorWeeklyDistances);
+  const summaries = computeWeekSummaries(activities, priorWeeklyDistances);
   const byWeek = groupActivitiesByWeek(activities);
+
+  function setActivities(update: (prev: Activity[]) => Activity[]) {
+    setEdits((prev) => ({ ...prev, activities: update(prev.activities) }));
+  }
 
   function toggleWeek(startDate: string) {
     setExpandedWeeks((prev) => {
@@ -55,10 +67,24 @@ export default function PlanView({ plan }: { plan: Plan }) {
     setEditingDate(null);
   }
 
+  function handlePriorWeeksEdit(updated: number[]) {
+    setEdits((prev) => ({ ...prev, priorWeeklyDistances: updated }));
+    setEditingPriorWeeks(false);
+  }
+
   function handleStatusChange(activityId: string, status: ActivityStatus | undefined) {
     setActivities((prev) =>
       prev.map((a) => (a.id === activityId ? { ...a, status } : a))
     );
+  }
+
+  function handleActivityMove(activityId: string, date: string) {
+    const activity = activities.find((a) => a.id === activityId);
+    if (!activity || activity.date === date) return;
+    setActivities((prev) => [
+      ...prev.filter((a) => a.id !== activityId),
+      { ...activity, date },
+    ]);
   }
 
 
@@ -85,7 +111,13 @@ export default function PlanView({ plan }: { plan: Plan }) {
           </button>
         </div>
         <button
-          onClick={() => startTransition(() => dispatch(activities))}
+          onClick={() => setEditingPriorWeeks(true)}
+          className="px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100"
+        >
+          Prior weeks
+        </button>
+        <button
+          onClick={() => startTransition(() => dispatch(edits))}
           disabled={saved || saving}
           className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -117,6 +149,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
               onToggle={() => toggleWeek(summary.startDate)}
               onDayEdit={setEditingDate}
               onStatusChange={handleStatusChange}
+              onActivityMove={handleActivityMove}
             />
           </div>
         );
@@ -128,6 +161,15 @@ export default function PlanView({ plan }: { plan: Plan }) {
           activities={activities.filter((a) => a.date === editingDate)}
           onSave={(updated) => handleDayEdit(editingDate, updated)}
           onClose={() => setEditingDate(null)}
+        />
+      )}
+
+      {editingPriorWeeks && (
+        <PriorWeeksModal
+          planStartDate={plan.startDate}
+          priorWeeklyDistances={priorWeeklyDistances}
+          onSave={handlePriorWeeksEdit}
+          onClose={() => setEditingPriorWeeks(false)}
         />
       )}
     </div>

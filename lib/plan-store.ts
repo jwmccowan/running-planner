@@ -5,14 +5,19 @@ import { seedPlan } from "./seed-data";
 
 const DATA_DIR = path.join(process.cwd(), "data", "plans");
 
-export async function loadPlan(id: string): Promise<Plan> {
+export async function loadPlan(id: string): Promise<Plan | null> {
   const filePath = path.join(DATA_DIR, `${id}.json`);
+  let raw: string;
   try {
-    const raw = await readFile(filePath, "utf-8");
+    raw = await readFile(filePath, "utf-8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    return id === seedPlan.id ? seedPlan : null;
+  }
+  try {
     return JSON.parse(raw) as Plan;
-  } catch {
-    if (id === seedPlan.id) return seedPlan;
-    throw new Error(`Plan ${id} not found`);
+  } catch (error) {
+    throw new Error(`Plan ${id} (${filePath}) is not valid JSON: ${(error as Error).message}`);
   }
 }
 
