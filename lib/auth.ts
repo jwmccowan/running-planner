@@ -22,7 +22,6 @@ export const auth = betterAuth({
       protocol: "https" as const,
     },
   }),
-  trustedOrigins: process.env.TRUSTED_ORIGINS?.split(",").map((origin) => origin.trim()) ?? [],
   database: drizzleAdapter(getDb(), {
     provider: "pg",
     schema: { user, session, account, verification },
