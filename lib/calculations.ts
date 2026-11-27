@@ -57,20 +57,12 @@ export function computeWeekStats(
 
 export function computeWeekSummaries(
   activities: Activity[],
+  startDate: string,
+  weekCount: number,
   priorWeeklyDistances: number[] = []
 ): WeekSummary[] {
-  if (activities.length === 0) return [];
-
-  const dates = activities.map((a) => parseDate(a.date));
-  const earliest = startOfWeek(new Date(Math.min(...dates.map((d) => d.getTime()))));
-  const latest = startOfWeek(new Date(Math.max(...dates.map((d) => d.getTime()))));
-
-  const weeks: Date[] = [];
-  let current = new Date(earliest);
-  while (current <= latest) {
-    weeks.push(new Date(current));
-    current = addDays(current, 7);
-  }
+  const start = parseDate(startDate);
+  const weeks = Array.from({ length: weekCount }, (_, i) => addDays(start, i * 7));
 
   const weekStats = weeks.map((w) => computeWeekStats(activities, w));
 
