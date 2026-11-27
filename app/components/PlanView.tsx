@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useActionState, startTransition } from "react";
+import { useState, useActionState, startTransition, useTransition } from "react";
 import Link from "next/link";
 import type { Activity, ActivityStatus, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
 import { useUndoHistory } from "@/lib/use-undo-history";
 import { limits } from "@/lib/limits";
-import { savePlanAction } from "@/app/actions";
+import { deletePlanAction, savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
 import DayEditorModal from "./DayEditorModal";
 import PriorWeeksModal from "./PriorWeeksModal";
@@ -44,6 +44,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editingPriorWeeks, setEditingPriorWeeks] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
+  const [deleting, startDeleting] = useTransition();
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [editingBlocks, setEditingBlocks] = useState(false);
   const [draggingBlock, setDraggingBlock] = useState<string | null>(null);
@@ -287,6 +288,8 @@ export default function PlanView({ plan }: { plan: Plan }) {
           current={{ name, startDate, weekCount, activities, blockStarts }}
           onSave={handleSettingsEdit}
           onClose={() => setEditingSettings(false)}
+          onDelete={() => startDeleting(() => deletePlanAction(plan.id))}
+          deleting={deleting}
         />
       )}
 

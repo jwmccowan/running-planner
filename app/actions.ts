@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import type { Plan } from "@/lib/types";
 import { getDb } from "@/lib/db";
-import { createPlan, PlanConflictError, savePlan } from "@/lib/plan-store";
+import { createPlan, deletePlan, PlanConflictError, savePlan } from "@/lib/plan-store";
 import { planProblems, planSettingsProblems } from "@/lib/plan-validation";
 import { requireUser } from "@/lib/session";
 
@@ -30,4 +30,10 @@ export async function createPlanAction(
   if (problems.length > 0) throw new Error(`Invalid plan: ${problems.join("; ")}`);
   const plan = await createPlan(getDb(), { ...fields, name }, user.id);
   redirect(`/plans/${plan.id}`);
+}
+
+export async function deletePlanAction(planId: string): Promise<void> {
+  const user = await requireUser();
+  await deletePlan(getDb(), planId, user.id);
+  redirect("/");
 }
