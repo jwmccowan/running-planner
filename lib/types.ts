@@ -23,6 +23,7 @@ export type Plan = {
   startDate: string; // ISO date, must be a Monday
   activities: Activity[];
   priorWeeklyDistances: number[]; // up to 4 weekly totals before startDate, oldest first
+  blockStarts: string[]; // ISO Mondays where a new block begins
 };
 
 export type WeekStats = {
