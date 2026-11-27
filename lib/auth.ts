@@ -33,7 +33,6 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    nextCookies(),
     // Previews sign in through production's Google callback (Google only allows fixed redirect URLs)
     ...(oAuthProxySecret
       ? [
@@ -43,5 +42,7 @@ export const auth = betterAuth({
           }),
         ]
       : []),
+    // Must stay last so it forwards cookies set by every other plugin
+    nextCookies(),
   ],
 });
