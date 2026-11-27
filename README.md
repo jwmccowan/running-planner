@@ -31,7 +31,7 @@ Hosted on Vercel with Neon Postgres (Sydney, `syd1`). `vercel.json` runs `pnpm d
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | production Google client | same client |
 | `OAUTH_PROXY_SECRET` | shared value | same value |
 | `ENABLE_EXPERIMENTAL_COREPACK` | `1` | `1` |
-| `MAX_PLANS_PER_USER`, `TRUSTED_ORIGINS` | optional | optional |
+| `MAX_PLANS_PER_USER` | optional | optional |
 
 ## Learn More
 

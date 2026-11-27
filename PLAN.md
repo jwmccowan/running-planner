@@ -19,7 +19,7 @@
 | 6b | Postgres storage (Drizzle) + import of local plans | done | PR #17 |
 | 6c | Accounts (Better Auth, Google sign-in) + plan membership | done | PR #18 |
 | 6c+ | Plan size limits, CI build + migration drift checks | done | PR #19, #20 |
-| 6d | Deploy (Vercel + Neon)    | in progress | `feat/deploy` |
+| 6d | Deploy (Vercel + Neon)    | done | PR #21 |
 | 6e | Browser tests (Playwright in CI) | todo |         |
 | 7  | Polish (color, layout)    | todo   |             |
 
