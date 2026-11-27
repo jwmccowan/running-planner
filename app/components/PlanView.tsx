@@ -8,10 +8,11 @@ import { savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
 import DayEditorModal from "./DayEditorModal";
 import PriorWeeksModal from "./PriorWeeksModal";
+import { AddBlockGap, BlockBar, BLOCK_MIME } from "./BlockBar";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-type PlanEdits = Pick<Plan, "activities" | "priorWeeklyDistances">;
+type PlanEdits = Pick<Plan, "activities" | "priorWeeklyDistances" | "blockStarts">;
 
 export default function PlanView({ plan }: { plan: Plan }) {
   const {
@@ -26,11 +27,15 @@ export default function PlanView({ plan }: { plan: Plan }) {
   } = useUndoHistory<PlanEdits>({
     activities: plan.activities,
     priorWeeklyDistances: plan.priorWeeklyDistances ?? [],
+    blockStarts: plan.blockStarts ?? [],
   });
-  const { activities, priorWeeklyDistances } = edits;
+  const { activities, priorWeeklyDistances, blockStarts } = edits;
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editingPriorWeeks, setEditingPriorWeeks] = useState(false);
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
+  const [editingBlocks, setEditingBlocks] = useState(false);
+  const [draggingBlock, setDraggingBlock] = useState<string | null>(null);
+  const [blockDropTarget, setBlockDropTarget] = useState<string | null>(null);
   const [, dispatch, saving] = useActionState(
     async (_: null, toSave: PlanEdits) => {
       await savePlanAction({ ...plan, ...toSave });
@@ -45,6 +50,10 @@ export default function PlanView({ plan }: { plan: Plan }) {
 
   function setActivities(update: (prev: Activity[]) => Activity[]) {
     setEdits((prev) => ({ ...prev, activities: update(prev.activities) }));
+  }
+
+  function setBlockStarts(update: (prev: string[]) => string[]) {
+    setEdits((prev) => ({ ...prev, blockStarts: update(prev.blockStarts) }));
   }
 
   function toggleWeek(startDate: string) {
@@ -87,6 +96,44 @@ export default function PlanView({ plan }: { plan: Plan }) {
     ]);
   }
 
+  function handleBlockAdd(weekStart: string) {
+    setBlockStarts((prev) => [...prev, weekStart].sort());
+  }
+
+  function handleBlockRemove(weekStart: string) {
+    setBlockStarts((prev) => prev.filter((d) => d !== weekStart));
+  }
+
+  function canDropBlock(weekStart: string, weekIndex: number): boolean {
+    return draggingBlock !== null && weekIndex > 0 && !blockStarts.includes(weekStart);
+  }
+
+  function handleBlockDragOver(e: React.DragEvent, weekStart: string, weekIndex: number) {
+    if (!e.dataTransfer.types.includes(BLOCK_MIME) || !canDropBlock(weekStart, weekIndex)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setBlockDropTarget(weekStart);
+  }
+
+  function handleBlockDragLeave(e: React.DragEvent) {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setBlockDropTarget(null);
+  }
+
+  function handleBlockDrop(e: React.DragEvent, weekStart: string, weekIndex: number) {
+    if (!draggingBlock || !canDropBlock(weekStart, weekIndex)) return;
+    e.preventDefault();
+    const from = draggingBlock;
+    setBlockStarts((prev) => prev.map((d) => (d === from ? weekStart : d)).sort());
+    setDraggingBlock(null);
+    setBlockDropTarget(null);
+  }
+
+  function handleBlockDragEnd() {
+    setDraggingBlock(null);
+    setBlockDropTarget(null);
+  }
+
 
   return (
     <div className="p-6">
@@ -117,6 +164,13 @@ export default function PlanView({ plan }: { plan: Plan }) {
           Prior weeks
         </button>
         <button
+          onClick={() => setEditingBlocks((prev) => !prev)}
+          aria-pressed={editingBlocks}
+          className={`px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100 ${editingBlocks ? "bg-zinc-200" : ""}`}
+        >
+          {editingBlocks ? "Edit blocks ✓" : "Edit blocks"}
+        </button>
+        <button
           onClick={() => startTransition(() => dispatch(edits))}
           disabled={saved || saving}
           className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -137,10 +191,30 @@ export default function PlanView({ plan }: { plan: Plan }) {
       </div>
       {summaries.map((summary, i) => {
         const weekActivities = byWeek.get(summary.startDate) ?? [];
-        const isBlockBoundary = i > 0 && i % 4 === 0;
         return (
-          <div key={summary.startDate}>
-            {isBlockBoundary && <div className="h-4 bg-zinc-200 my-1" />}
+          <div
+            key={summary.startDate}
+            className="relative"
+            onDragOver={(e) => handleBlockDragOver(e, summary.startDate, i)}
+            onDragLeave={handleBlockDragLeave}
+            onDrop={(e) => handleBlockDrop(e, summary.startDate, i)}
+          >
+            {blockDropTarget === summary.startDate && (
+              <div className="pointer-events-none absolute top-0 inset-x-0 h-6 z-20 border-2 border-dashed border-blue-400" />
+            )}
+            {blockStarts.includes(summary.startDate) ? (
+              <BlockBar
+                weekStart={summary.startDate}
+                editable={editingBlocks}
+                onDragStart={() => setDraggingBlock(summary.startDate)}
+                onDragEnd={handleBlockDragEnd}
+                onRemove={() => handleBlockRemove(summary.startDate)}
+              />
+            ) : (
+              i > 0 && editingBlocks && (
+                <AddBlockGap onAdd={() => handleBlockAdd(summary.startDate)} />
+              )
+            )}
             <WeekRow
               summary={summary}
               activities={weekActivities}

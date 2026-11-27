@@ -234,4 +234,5 @@ export const seedPlan: Plan = {
   startDate: "2026-02-09",
   activities,
   priorWeeklyDistances: [15, 15, 15, 15],
+  blockStarts: ["2026-03-09", "2026-04-06", "2026-05-04", "2026-06-01", "2026-06-29"],
 };
