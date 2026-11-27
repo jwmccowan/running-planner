@@ -19,6 +19,7 @@ export default function WeekRow({
   onToggle,
   onDayEdit,
   onStatusChange,
+  onActivityMove,
 }: {
   summary: WeekSummaryType;
   activities: Activity[];
@@ -27,6 +28,7 @@ export default function WeekRow({
   onToggle: () => void;
   onDayEdit: (date: string) => void;
   onStatusChange: (activityId: string, status: ActivityStatus | undefined) => void;
+  onActivityMove: (activityId: string, date: string) => void;
 }) {
   const actsByDate = new Map<string, Activity[]>();
   for (const a of activities) {
@@ -56,6 +58,7 @@ export default function WeekRow({
             expanded={expanded}
             onEdit={onDayEdit}
             onStatusChange={onStatusChange}
+            onActivityMove={onActivityMove}
           />
         );
       })}

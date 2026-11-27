@@ -1,4 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import type { Activity, ActivityStatus } from "@/lib/types";
+
+const ACTIVITY_MIME = "application/x-activity-id";
 
 function nextStatus(current: ActivityStatus | undefined): ActivityStatus | undefined {
   if (current === undefined) return "completed";
@@ -38,8 +43,17 @@ function ActivityChip({
     onStatusChange(activity.id, nextStatus(activity.status));
   }
 
+  function handleDragStart(e: React.DragEvent) {
+    e.dataTransfer.setData(ACTIVITY_MIME, activity.id);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
   return (
-    <div className={`flex rounded overflow-hidden text-xs ${chipColor(activity)}`}>
+    <div
+      draggable
+      onDragStart={handleDragStart}
+      className={`flex rounded overflow-hidden text-xs cursor-grab ${chipColor(activity)}`}
+    >
       <div className={`flex-1 px-1.5 py-0.5 min-w-0 ${activity.status === "missed" ? "line-through" : ""}`}>
         {children}
       </div>
@@ -116,6 +130,7 @@ export default function DayCell({
   expanded,
   onEdit,
   onStatusChange,
+  onActivityMove,
 }: {
   date: string;
   dayNumber: number;
@@ -124,15 +139,43 @@ export default function DayCell({
   expanded: boolean;
   onEdit: (date: string) => void;
   onStatusChange: (activityId: string, status: ActivityStatus | undefined) => void;
+  onActivityMove: (activityId: string, date: string) => void;
 }) {
+  const [dragOver, setDragOver] = useState(false);
+
   function handleClick(e: React.MouseEvent) {
     e.stopPropagation();
     onEdit(date);
   }
 
+  function handleDragOver(e: React.DragEvent) {
+    if (!e.dataTransfer.types.includes(ACTIVITY_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOver(true);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setDragOver(false);
+    const activityId = e.dataTransfer.getData(ACTIVITY_MIME);
+    if (activityId) onActivityMove(activityId, date);
+  }
+
+  const dropProps = {
+    onDragOver: handleDragOver,
+    onDragLeave: () => setDragOver(false),
+    onDrop: handleDrop,
+  };
+  const dropRing = dragOver ? "ring-2 ring-blue-400" : "";
+
   if (expanded) {
     return (
-      <div onClick={handleClick} className="h-full cursor-pointer hover:ring-1 hover:ring-blue-300 rounded">
+      <div
+        onClick={handleClick}
+        {...dropProps}
+        className={`h-full cursor-pointer hover:ring-1 hover:ring-blue-300 rounded ${dropRing}`}
+      >
         <ExpandedDayCell
           dayNumber={dayNumber}
           activities={activities}
@@ -143,7 +186,11 @@ export default function DayCell({
     );
   }
   return (
-    <div onClick={handleClick} className="cursor-pointer hover:bg-zinc-100 rounded">
+    <div
+      onClick={handleClick}
+      {...dropProps}
+      className={`cursor-pointer hover:bg-zinc-100 rounded ${dropRing}`}
+    >
       <CompactDayCell activities={activities} onStatusChange={onStatusChange} />
     </div>
   );

@@ -61,6 +61,15 @@ export default function PlanView({ plan }: { plan: Plan }) {
     );
   }
 
+  function handleActivityMove(activityId: string, date: string) {
+    const activity = activities.find((a) => a.id === activityId);
+    if (!activity || activity.date === date) return;
+    setActivities((prev) => [
+      ...prev.filter((a) => a.id !== activityId),
+      { ...activity, date },
+    ]);
+  }
+
 
   return (
     <div className="p-6">
@@ -117,6 +126,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
               onToggle={() => toggleWeek(summary.startDate)}
               onDayEdit={setEditingDate}
               onStatusChange={handleStatusChange}
+              onActivityMove={handleActivityMove}
             />
           </div>
         );
