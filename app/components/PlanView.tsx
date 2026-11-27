@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useActionState, startTransition } from "react";
+import Link from "next/link";
 import type { Activity, ActivityStatus, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
 import { useUndoHistory } from "@/lib/use-undo-history";
@@ -152,7 +153,10 @@ export default function PlanView({ plan }: { plan: Plan }) {
 
   return (
     <div className="p-6">
-      <div className="flex items-center gap-4 mb-4">
+      <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
+        ← All plans
+      </Link>
+      <div className="flex items-center gap-4 mb-4 mt-1">
         <h1 className="text-xl font-bold">{name}</h1>
         <div className="flex items-center gap-1">
           <button
