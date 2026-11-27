@@ -39,9 +39,10 @@ export type WeekStats = {
 };
 
 export type WeekSummary = WeekStats & {
-  chronicDistance: number;
-  idealAcuteRange: [low: number, high: number];
-  acuteVsChronicChange: number; // (acute - chronic) / chronic × 100
+  chronicDistance: number | null; // null when there are no earlier weeks (plan or prior) to average
+  chronicWeeks: number; // how many earlier weeks the chronic average uses (0 to config.chronicWeeks)
+  idealAcuteRange: [low: number, high: number] | null;
+  acuteVsChronicChange: number | null; // (acute - chronic) / chronic × 100
   weekOverWeekChange: number | null; // null for first week
   longestRunVsPrevWeek: number | null;
   longestRunVs4WeekAvg: number | null;

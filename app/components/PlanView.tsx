@@ -265,6 +265,9 @@ export default function PlanView({ plan }: { plan: Plan }) {
               dayOffset={i * 7}
               expanded={expandedWeeks.has(summary.startDate)}
               onToggle={() => toggleWeek(summary.startDate)}
+              onAddPriorWeeks={
+                i === 0 && priorWeeklyDistances.length === 0 ? () => setEditingPriorWeeks(true) : undefined
+              }
               onDayEdit={setEditingDate}
               onStatusChange={handleStatusChange}
               onActivityMove={handleActivityMove}

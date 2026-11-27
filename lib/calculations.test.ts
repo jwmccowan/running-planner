@@ -99,8 +99,8 @@ describe("computeWeekSummaries", () => {
     ];
     const summaries = computeWeekSummaries(activities, "2025-03-03", 4);
     // Week 4: chronic = 10, range = [8, 13]
-    expect(summaries[3].idealAcuteRange[0]).toBeCloseTo(8, 1);
-    expect(summaries[3].idealAcuteRange[1]).toBeCloseTo(13, 1);
+    expect(summaries[3].idealAcuteRange?.[0]).toBeCloseTo(8, 1);
+    expect(summaries[3].idealAcuteRange?.[1]).toBeCloseTo(13, 1);
   });
 
   it("computes week-over-week change", () => {
@@ -146,10 +146,30 @@ describe("computeWeekSummaries", () => {
     expect(summaries[0].acuteDistance).toBe(10);
   });
 
-  it("uses acute distance as chronic for the first week with no prior data", () => {
+  it("has no chronic distance, range or change for a first week with no prior data", () => {
     const activities = [run("2025-03-03", 15)];
     const summaries = computeWeekSummaries(activities, "2025-03-03", 1);
-    expect(summaries[0].chronicDistance).toBe(15);
+    expect(summaries[0]).toMatchObject({
+      chronicDistance: null,
+      chronicWeeks: 0,
+      idealAcuteRange: null,
+      acuteVsChronicChange: null,
+    });
+  });
+
+  it("averages whatever earlier weeks exist and records how many", () => {
+    const activities = [run("2025-03-03", 10), run("2025-03-10", 20), run("2025-03-17", 30)];
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 3);
+    expect(summaries.map((s) => [s.chronicDistance, s.chronicWeeks])).toEqual([
+      [null, 0],
+      [10, 1],
+      [15, 2],
+    ]);
+  });
+
+  it("counts prior weeks toward the history", () => {
+    const summaries = computeWeekSummaries([run("2025-03-03", 20)], "2025-03-03", 1, [12, 14]);
+    expect(summaries[0]).toMatchObject({ chronicDistance: 13, chronicWeeks: 2 });
   });
 
   it("uses priorWeeklyDistances for early chronic calculations", () => {
