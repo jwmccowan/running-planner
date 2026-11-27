@@ -6,13 +6,13 @@ import type { Activity, ActivityStatus } from "@/lib/types";
 
 const ACTIVITY_MIME = "application/x-activity-id";
 
-function nextStatus(current: ActivityStatus | undefined): ActivityStatus | undefined {
+export function nextStatus(current: ActivityStatus | undefined): ActivityStatus | undefined {
   if (current === undefined) return "completed";
   if (current === "completed") return "missed";
   return undefined;
 }
 
-function chipColor(activity: Activity): string {
+export function chipColor(activity: Activity): string {
   if (activity.status === "missed") return "bg-zinc-200 text-zinc-400";
   const done = activity.status === "completed";
   if (activity.type === "gym") return done ? "bg-purple-200 text-purple-800" : "bg-purple-100 text-purple-800";
@@ -24,7 +24,7 @@ function chipColor(activity: Activity): string {
   }
 }
 
-function statusIcon(status: ActivityStatus | undefined): string {
+export function statusIcon(status: ActivityStatus | undefined): string {
   if (status === "completed") return "✓";
   if (status === "missed") return "✗";
   return "○";

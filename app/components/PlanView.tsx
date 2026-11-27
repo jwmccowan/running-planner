@@ -8,6 +8,7 @@ import { useUndoHistory } from "@/lib/use-undo-history";
 import { limits } from "@/lib/limits";
 import { deletePlanAction, savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
+import MobileWeekCard from "./MobileWeekCard";
 import DayEditorModal from "./DayEditorModal";
 import PriorWeeksModal from "./PriorWeeksModal";
 import PlanSettingsModal from "./PlanSettingsModal";
@@ -44,6 +45,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [editingPriorWeeks, setEditingPriorWeeks] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, startDeleting] = useTransition();
   const [expandedWeeks, setExpandedWeeks] = useState<Set<string>>(new Set());
   const [editingBlocks, setEditingBlocks] = useState(false);
@@ -158,12 +160,12 @@ export default function PlanView({ plan }: { plan: Plan }) {
 
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
         ← All plans
       </Link>
-      <div className="flex items-center gap-4 mb-4 mt-1">
-        <h1 className="text-xl font-bold">{name}</h1>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 mt-1">
+        <h1 className="text-xl font-bold w-full md:w-auto">{name}</h1>
         <div className="flex items-center gap-1">
           <button
             onClick={undo}
@@ -184,27 +186,60 @@ export default function PlanView({ plan }: { plan: Plan }) {
         </div>
         <button
           onClick={() => setEditingSettings(true)}
-          className="px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100"
+          className="hidden md:block px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100"
         >
           Plan settings
         </button>
         <button
           onClick={() => setEditingPriorWeeks(true)}
-          className="px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100"
+          className="hidden md:block px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100"
         >
           Prior weeks
         </button>
         <button
           onClick={() => setEditingBlocks((prev) => !prev)}
           aria-pressed={editingBlocks}
-          className={`px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100 ${editingBlocks ? "bg-zinc-200" : ""}`}
+          className={`hidden md:block px-2 py-1 text-sm rounded border border-zinc-300 hover:bg-zinc-100 ${editingBlocks ? "bg-zinc-200" : ""}`}
         >
           {editingBlocks ? "Edit blocks ✓" : "Edit blocks"}
         </button>
+        <div className="relative md:hidden">
+          <button
+            onClick={() => setMenuOpen((prev) => !prev)}
+            aria-label="More actions"
+            aria-expanded={menuOpen}
+            className="px-3 py-1 text-sm rounded border border-zinc-300 active:bg-zinc-100"
+          >
+            ⋯
+          </button>
+          {menuOpen && (
+            <div className="absolute left-0 top-full mt-1 z-40 w-44 rounded border border-zinc-200 bg-white shadow-lg py-1">
+              {[
+                { label: "Plan settings", action: () => setEditingSettings(true) },
+                { label: "Prior weeks", action: () => setEditingPriorWeeks(true) },
+                {
+                  label: editingBlocks ? "Edit blocks ✓" : "Edit blocks",
+                  action: () => setEditingBlocks((prev) => !prev),
+                },
+              ].map(({ label, action }) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    action();
+                  }}
+                  className="block w-full text-left px-3 py-2 text-sm active:bg-zinc-100"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button
           onClick={() => startTransition(() => dispatch(edits))}
           disabled={saved || saving || saveState.conflict}
-          className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="ml-auto md:ml-0 px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? "Saving…" : saved ? "Saved" : "Save"}
         </button>
@@ -223,7 +258,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
           </button>
         </div>
       )}
-      <div className="grid gap-px mb-1" style={{ gridTemplateColumns: 'minmax(0, 1.5fr) repeat(7, minmax(0, 1fr))' }}>
+      <div className="hidden md:grid gap-px mb-1" style={{ gridTemplateColumns: 'minmax(0, 1.5fr) repeat(7, minmax(0, 1fr))' }}>
         <div />
         {DAYS.map((day) => (
           <div
@@ -272,6 +307,17 @@ export default function PlanView({ plan }: { plan: Plan }) {
               onDayEdit={setEditingDate}
               onStatusChange={handleStatusChange}
               onActivityMove={handleActivityMove}
+            />
+            <MobileWeekCard
+              summary={summary}
+              activities={weekActivities}
+              expanded={expandedWeeks.has(summary.startDate)}
+              onToggle={() => toggleWeek(summary.startDate)}
+              onAddPriorWeeks={
+                i === 0 && priorWeeklyDistances.length === 0 ? () => setEditingPriorWeeks(true) : undefined
+              }
+              onDayEdit={setEditingDate}
+              onStatusChange={handleStatusChange}
             />
           </div>
         );
