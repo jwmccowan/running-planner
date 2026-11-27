@@ -4,13 +4,15 @@ import { redirect } from "next/navigation";
 import type { Plan } from "@/lib/types";
 import { getDb } from "@/lib/db";
 import { createPlan, PlanConflictError, savePlan } from "@/lib/plan-store";
-import { isMonday } from "@/lib/plan-settings";
+import { planProblems, planSettingsProblems } from "@/lib/plan-validation";
 import { requireUser } from "@/lib/session";
 
 export type SavePlanResult = { ok: true; version: number } | { ok: false; reason: "conflict" };
 
 export async function savePlanAction(plan: Plan): Promise<SavePlanResult> {
   const user = await requireUser();
+  const problems = planProblems(plan);
+  if (problems.length > 0) throw new Error(`Invalid plan: ${problems.join("; ")}`);
   try {
     return { ok: true, version: await savePlan(getDb(), plan, user.id) };
   } catch (error) {
@@ -24,13 +26,8 @@ export async function createPlanAction(
 ): Promise<void> {
   const user = await requireUser();
   const name = fields.name.trim();
-  if (name === "") throw new Error("Plan name can't be empty");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fields.startDate) || !isMonday(fields.startDate)) {
-    throw new Error("Start date must be a Monday");
-  }
-  if (!Number.isInteger(fields.weekCount) || fields.weekCount < 1) {
-    throw new Error("Weeks must be a whole number of at least 1");
-  }
+  const problems = planSettingsProblems({ ...fields, name });
+  if (problems.length > 0) throw new Error(`Invalid plan: ${problems.join("; ")}`);
   const plan = await createPlan(getDb(), { ...fields, name }, user.id);
   redirect(`/plans/${plan.id}`);
 }

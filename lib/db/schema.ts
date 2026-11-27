@@ -122,6 +122,7 @@ export const activities = pgTable(
     check("activities_run_type", sql`(${t.type} = 'run') = (${t.runType} is not null)`),
     check("activities_status", sql`${t.status} is null or ${t.status} in ('completed', 'missed')`),
     check("activities_intense_within_distance", sql`${t.intenseDistance} <= ${t.distance}`),
+    check("activities_intense_non_negative", sql`${t.intenseDistance} >= 0`),
   ]
 );
 
