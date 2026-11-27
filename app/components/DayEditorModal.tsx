@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { limits } from "@/lib/limits";
 import type { Activity, ActivityStatus, RunType } from "@/lib/types";
 
 type DraftActivity = {
@@ -47,6 +48,18 @@ const DEFAULT_NAMES: Record<RunType | "gym", string> = {
 };
 
 
+function draftProblem(d: DraftActivity): string | null {
+  if (d.name.trim() === "") return "Name can't be empty";
+  if (d.type === "gym") return null;
+  const distance = parseFloat(d.distance) || 0;
+  const intense = parseFloat(d.intenseDistance) || 0;
+  if (distance < 0 || distance > limits.maxActivityDistanceKm) {
+    return `Distance must be 0–${limits.maxActivityDistanceKm} km`;
+  }
+  if (intense < 0 || intense > distance) return "Intense distance can't be more than the distance";
+  return null;
+}
+
 function newDraft(): DraftActivity {
   return {
     id: crypto.randomUUID(),
@@ -89,6 +102,9 @@ export default function DayEditorModal({
   function removeDraft(id: string) {
     setDrafts((prev) => prev.filter((d) => d.id !== id));
   }
+
+  const atDayLimit = drafts.length >= limits.maxActivitiesPerDay;
+  const hasProblems = drafts.some((d) => draftProblem(d) !== null);
 
   function handleSave() {
     onSave(drafts.map((d) => fromDraft(d, date)));
@@ -137,6 +153,7 @@ export default function DayEditorModal({
                 </select>
                 <input
                   value={draft.name}
+                  maxLength={limits.maxNameLength}
                   onChange={(e) => updateDraft(draft.id, { name: e.target.value })}
                   placeholder="Name"
                   className="flex-1 text-sm border border-zinc-300 rounded px-2 py-0.5"
@@ -155,6 +172,7 @@ export default function DayEditorModal({
                   <input
                     type="number"
                     min={0}
+                    max={limits.maxActivityDistanceKm}
                     step={0.1}
                     value={draft.distance}
                     onChange={(e) => updateDraft(draft.id, { distance: e.target.value })}
@@ -178,16 +196,27 @@ export default function DayEditorModal({
                   />
                 </div>
               )}
+
+              {draftProblem(draft) && (
+                <p className="text-xs text-red-600">{draftProblem(draft)}</p>
+              )}
             </div>
           ))}
         </div>
 
         <button
           onClick={() => setDrafts((prev) => [...prev, newDraft()])}
-          className="mt-3 text-sm text-blue-600 hover:text-blue-800"
+          disabled={atDayLimit}
+          title={atDayLimit ? `Up to ${limits.maxActivitiesPerDay} activities per day` : undefined}
+          className="mt-3 text-sm text-blue-600 hover:text-blue-800 disabled:text-zinc-400 disabled:cursor-not-allowed"
         >
           + Add activity
         </button>
+        {atDayLimit && (
+          <span className="ml-2 text-xs text-zinc-500">
+            Up to {limits.maxActivitiesPerDay} activities per day
+          </span>
+        )}
 
         <div className="flex justify-end gap-2 mt-6">
           <button
@@ -198,7 +227,8 @@ export default function DayEditorModal({
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+            disabled={hasProblems}
+            className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Save
           </button>

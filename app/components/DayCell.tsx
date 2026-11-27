@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { limits } from "@/lib/limits";
 import type { Activity, ActivityStatus } from "@/lib/types";
 
 const ACTIVITY_MIME = "application/x-activity-id";
@@ -150,6 +151,7 @@ export default function DayCell({
 
   function handleDragOver(e: React.DragEvent) {
     if (!e.dataTransfer.types.includes(ACTIVITY_MIME)) return;
+    if (activities.length >= limits.maxActivitiesPerDay) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setDragOver(true);

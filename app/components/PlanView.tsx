@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Activity, ActivityStatus, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
 import { useUndoHistory } from "@/lib/use-undo-history";
+import { limits } from "@/lib/limits";
 import { savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
 import DayEditorModal from "./DayEditorModal";
@@ -109,6 +110,7 @@ export default function PlanView({ plan }: { plan: Plan }) {
   function handleActivityMove(activityId: string, date: string) {
     const activity = activities.find((a) => a.id === activityId);
     if (!activity || activity.date === date) return;
+    if (activities.filter((a) => a.date === date).length >= limits.maxActivitiesPerDay) return;
     setActivities((prev) => [
       ...prev.filter((a) => a.id !== activityId),
       { ...activity, date },

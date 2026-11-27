@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { limits } from "@/lib/limits";
 import type { Activity, Plan } from "@/lib/types";
 import {
   applyPlanSettings,
@@ -43,10 +44,10 @@ export default function PlanSettingsModal({
   const [weeks, setWeeks] = useState(String(current.weekCount));
   const [moveActivities, setMoveActivities] = useState(true);
 
-  const nameValid = name.trim() !== "";
+  const nameValid = name.trim() !== "" && name.length <= limits.maxNameLength;
   const weekCount = Number(weeks);
   const startValid = /^\d{4}-\d{2}-\d{2}$/.test(startDate) && isMonday(startDate);
-  const weeksValid = Number.isInteger(weekCount) && weekCount >= 1;
+  const weeksValid = Number.isInteger(weekCount) && weekCount >= 1 && weekCount <= limits.maxWeeks;
   const preview =
     startValid && weeksValid
       ? applyPlanSettings(current, startDate, weekCount, moveActivities)
@@ -94,6 +95,7 @@ export default function PlanSettingsModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus={mode === "create"}
+              maxLength={limits.maxNameLength}
               className="flex-1 border border-zinc-300 rounded px-2 py-0.5 text-sm"
             />
           </div>
@@ -126,6 +128,7 @@ export default function PlanSettingsModal({
             <input
               type="number"
               min={1}
+              max={limits.maxWeeks}
               step={1}
               value={weeks}
               onChange={(e) => setWeeks(e.target.value)}
@@ -137,7 +140,7 @@ export default function PlanSettingsModal({
               </span>
             )}
           </div>
-          {!weeksValid && <p className="text-red-600">Weeks must be a whole number of at least 1.</p>}
+          {!weeksValid && <p className="text-red-600">Weeks must be a whole number from 1 to {limits.maxWeeks}.</p>}
         </div>
 
         {removed.length > 0 && (

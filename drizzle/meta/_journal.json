@@ -15,6 +15,13 @@
       "when": 1795780421050,
       "tag": "0001_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795782618761,
+      "tag": "0002_intense_non_negative",
+      "breakpoints": true
     }
   ]
 }

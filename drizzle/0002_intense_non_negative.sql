@@ -1,0 +1,1 @@
+ALTER TABLE "activities" ADD CONSTRAINT "activities_intense_non_negative" CHECK ("activities"."intense_distance" >= 0);

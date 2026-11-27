@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { config } from "@/lib/config";
+import { limits } from "@/lib/limits";
 
 function weekLabel(planStartDate: string, weeksBefore: number): string {
   const d = new Date(planStartDate + "T00:00:00Z");
@@ -38,6 +39,10 @@ export default function PriorWeeksModal({
   const firstFilled = drafts.findIndex((d) => d.trim() !== "");
   const filled = firstFilled === -1 ? [] : drafts.slice(firstFilled);
   const hasGap = filled.some((d) => d.trim() === "");
+  const outOfRange = filled.some((d) => {
+    const km = parseFloat(d) || 0;
+    return km < 0 || km > limits.maxPriorWeekDistanceKm;
+  });
 
   function updateDraft(index: number, value: string) {
     setDrafts((prev) => prev.map((d, i) => (i === index ? value : d)));
@@ -85,6 +90,11 @@ export default function PriorWeeksModal({
             Only the oldest weeks can be left blank.
           </p>
         )}
+        {outOfRange && (
+          <p className="text-sm text-red-600 mt-3">
+            Weekly distances must be 0–{limits.maxPriorWeekDistanceKm} km.
+          </p>
+        )}
 
         <div className="flex justify-end gap-2 mt-6">
           <button
@@ -95,7 +105,7 @@ export default function PriorWeeksModal({
           </button>
           <button
             onClick={handleSave}
-            disabled={hasGap}
+            disabled={hasGap || outOfRange}
             className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             Save
