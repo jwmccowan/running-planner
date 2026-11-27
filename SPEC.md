@@ -26,21 +26,23 @@ A single workout on a single day.
 
 ### Week
 
-A Monday-to-Sunday window. Derived from activities, not stored separately.
+A Monday-to-Sunday window. A plan's weeks are `weekCount` consecutive weeks starting at `startDate`; they are not stored separately, and weeks with no activities still appear.
 
 ### Plan
 
-The top-level object. Weeks are derived by grouping activities by their date.
+The top-level object. Activities are grouped into the plan's weeks by their date.
 
 | Field                  | Type       | Description                                                               |
 | ---------------------- | ---------- | ------------------------------------------------------------------------- |
 | `id`                   | string     | Unique identifier                                                         |
 | `name`                 | string     | Display name, e.g. "2027 Summer build"                                    |
 | `startDate`            | string     | ISO date of the plan's first Monday                                       |
+| `weekCount`            | number     | Number of weeks in the plan                                               |
 | `activities`           | Activity[] | Flat list of all activities in the plan                                   |
 | `priorWeeklyDistances` | number[]   | Up to 4 weekly totals (km) before `startDate`, oldest first               |
 | `blockStarts`          | string[]   | ISO Mondays where a new block begins (see [Blocks](#blocks))              |
 
+- `name`, `startDate` and `weekCount` are edited from the **Plan settings** dialog in the plan header. Changing the start date can either move the activities and blocks with it, or leave them on their dates (adding or removing weeks at the start, with the end date fixed). Activities that end up outside the plan's weeks are deleted after a warning; block bars outside the plan are dropped.
 - `priorWeeklyDistances` gives the early weeks enough history for chronic distance. It's edited from the **Prior weeks** dialog in the plan header.
 
 ## Calculations

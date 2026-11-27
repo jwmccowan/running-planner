@@ -232,6 +232,7 @@ export const seedPlan: Plan = {
   id: "1",
   name: "2026 Training Plan",
   startDate: "2026-02-09",
+  weekCount: 24,
   activities,
   priorWeeklyDistances: [15, 15, 15, 15],
   blockStarts: ["2026-03-09", "2026-04-06", "2026-05-04", "2026-06-01", "2026-06-29"],

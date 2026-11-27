@@ -83,7 +83,7 @@ describe("computeWeekSummaries", () => {
       run("2025-03-17", 14), // week 3
       run("2025-03-24", 16), // week 4
     ];
-    const summaries = computeWeekSummaries(activities);
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 4);
     expect(summaries).toHaveLength(4);
 
     // Week 4: chronic = avg of weeks 1-3 = (10+12+14)/3
@@ -97,7 +97,7 @@ describe("computeWeekSummaries", () => {
       run("2025-03-17", 10),
       run("2025-03-24", 10),
     ];
-    const summaries = computeWeekSummaries(activities);
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 4);
     // Week 4: chronic = 10, range = [8, 13]
     expect(summaries[3].idealAcuteRange[0]).toBeCloseTo(8, 1);
     expect(summaries[3].idealAcuteRange[1]).toBeCloseTo(13, 1);
@@ -108,7 +108,7 @@ describe("computeWeekSummaries", () => {
       run("2025-03-03", 10), // week 1
       run("2025-03-10", 12), // week 2: +20%
     ];
-    const summaries = computeWeekSummaries(activities);
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 2);
     expect(summaries[0].weekOverWeekChange).toBeNull();
     expect(summaries[1].weekOverWeekChange).toBeCloseTo(20, 1);
   });
@@ -120,17 +120,35 @@ describe("computeWeekSummaries", () => {
       run("2025-03-10", 6),
       run("2025-03-11", 10), // longest = 10
     ];
-    const summaries = computeWeekSummaries(activities);
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 2);
     expect(summaries[1].longestRunVsPrevWeek).toBe(2);
   });
 
-  it("returns empty array for no activities", () => {
-    expect(computeWeekSummaries([])).toEqual([]);
+  it("returns empty array for zero weeks", () => {
+    expect(computeWeekSummaries([], "2025-03-03", 0)).toEqual([]);
+  });
+
+  it("includes weeks with no activities", () => {
+    const activities = [run("2025-03-10", 10)]; // week 2 only
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 3);
+    expect(summaries.map((s) => s.startDate)).toEqual(["2025-03-03", "2025-03-10", "2025-03-17"]);
+    expect(summaries.map((s) => s.acuteDistance)).toEqual([0, 10, 0]);
+  });
+
+  it("ignores activities outside the plan's weeks", () => {
+    const activities = [
+      run("2025-02-24", 99), // before start
+      run("2025-03-03", 10),
+      run("2025-03-10", 99), // after last week
+    ];
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 1);
+    expect(summaries).toHaveLength(1);
+    expect(summaries[0].acuteDistance).toBe(10);
   });
 
   it("uses acute distance as chronic for the first week with no prior data", () => {
     const activities = [run("2025-03-03", 15)];
-    const summaries = computeWeekSummaries(activities);
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 1);
     expect(summaries[0].chronicDistance).toBe(15);
   });
 
@@ -138,7 +156,7 @@ describe("computeWeekSummaries", () => {
     const activities = [
       run("2025-03-03", 20), // week 1
     ];
-    const summaries = computeWeekSummaries(activities, [10, 12, 14, 16]);
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 1, [10, 12, 14, 16]);
     // chronic = avg of prior 4 weeks = (10+12+14+16)/4 = 13
     expect(summaries[0].chronicDistance).toBeCloseTo(13, 1);
   });
@@ -148,7 +166,7 @@ describe("computeWeekSummaries", () => {
       run("2025-03-03", 20), // week 1
       run("2025-03-10", 22), // week 2
     ];
-    const summaries = computeWeekSummaries(activities, [10, 12, 14, 16]);
+    const summaries = computeWeekSummaries(activities, "2025-03-03", 2, [10, 12, 14, 16]);
     // week 2 chronic = avg of [12, 14, 16, 20] = 15.5
     expect(summaries[1].chronicDistance).toBeCloseTo(15.5, 1);
   });
