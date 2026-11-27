@@ -5,9 +5,9 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 1. **Postgres.** Run Postgres however you like and create a database, e.g.
    - Homebrew: `brew install postgresql@17 && brew services start postgresql@17 && createdb running_planner`
    - Docker: `docker run -d --name running-planner-pg -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=running_planner postgres:17`
-2. **Config.** `cp .env.example .env.local` and set `DATABASE_URL`.
+2. **Config.** `cp .env.example .env.local` and fill it in: `DATABASE_URL`, a `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), and a Google OAuth client (redirect URI `http://localhost:3000/api/auth/callback/google`).
 3. **Install and migrate.** `pnpm install`, then `pnpm db:migrate`.
-4. **Import existing plan files** (optional): `pnpm db:import` loads `data/plans/*.json`, keeping their IDs.
+4. **Import existing plan files** (optional): `pnpm db:import` loads `data/plans/*.json`, keeping their IDs. Imported plans have no owner until you sign in once and run `pnpm db:claim <your-email>`.
 5. **Run.** `pnpm dev` and open [http://localhost:3000](http://localhost:3000).
 
 | Command | What it does |
@@ -17,6 +17,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 | `pnpm db:generate` | Create a migration in `drizzle/` after changing `lib/db/schema.ts` |
 | `pnpm db:migrate` | Apply migrations to `DATABASE_URL` |
 | `pnpm db:import [files]` | Import plan JSON files into the database |
+| `pnpm db:claim <email> [ids]` | Give unowned plans to a user (who has signed in once) |
 
 ## Learn More
 

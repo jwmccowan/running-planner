@@ -1,12 +1,32 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Db } from "./db";
-import { activities, plans } from "./db/schema";
+import { activities, planMembers, plans, user } from "./db/schema";
 import type { Activity, Plan } from "./types";
+
+const DEFAULT_MAX_PLANS_PER_USER = 2;
+
+export function maxPlansPerUser(): number {
+  return Number(process.env.MAX_PLANS_PER_USER ?? DEFAULT_MAX_PLANS_PER_USER);
+}
 
 export class PlanConflictError extends Error {
   constructor(planId: string) {
     super(`Plan ${planId} was changed or deleted since it was loaded`);
     this.name = "PlanConflictError";
+  }
+}
+
+export class PlanNotFoundError extends Error {
+  constructor(planId: string) {
+    super(`Plan ${planId} not found`);
+    this.name = "PlanNotFoundError";
+  }
+}
+
+export class PlanLimitError extends Error {
+  constructor(limit: number) {
+    super(`You can have at most ${limit} plans`);
+    this.name = "PlanLimitError";
   }
 }
 
@@ -66,36 +86,68 @@ async function activitiesByPlan(db: Db, planIds: string[]): Promise<Map<string, 
   return byPlan;
 }
 
-export async function loadPlan(db: Db, id: string): Promise<Plan | null> {
-  const [row] = await db.select().from(plans).where(eq(plans.id, id));
+const isMember = (planId: string | typeof plans.id, userId: string) =>
+  and(eq(planMembers.planId, planId), eq(planMembers.userId, userId));
+
+// Plans you're not a member of are reported as not found.
+export async function loadPlan(db: Db, id: string, userId: string): Promise<Plan | null> {
+  const [row] = await db
+    .select({ plan: plans })
+    .from(plans)
+    .innerJoin(planMembers, isMember(plans.id, userId))
+    .where(eq(plans.id, id));
   if (!row) return null;
   const byPlan = await activitiesByPlan(db, [id]);
-  return toPlan(row, byPlan.get(id) ?? []);
+  return toPlan(row.plan, byPlan.get(id) ?? []);
 }
 
-export async function listPlans(db: Db): Promise<Plan[]> {
-  const rows = await db.select().from(plans);
+export async function listPlans(db: Db, userId: string): Promise<Plan[]> {
+  const rows = await db
+    .select({ plan: plans })
+    .from(plans)
+    .innerJoin(planMembers, isMember(plans.id, userId));
   const byPlan = await activitiesByPlan(
     db,
-    rows.map((r) => r.id)
+    rows.map((r) => r.plan.id)
   );
-  return rows.map((row) => toPlan(row, byPlan.get(row.id) ?? []));
+  return rows.map(({ plan }) => toPlan(plan, byPlan.get(plan.id) ?? []));
+}
+
+export async function countOwnedPlans(db: Db, userId: string): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(planMembers)
+    .where(and(eq(planMembers.userId, userId), eq(planMembers.role, "owner")));
+  return row.n;
 }
 
 export async function createPlan(
   db: Db,
-  fields: Pick<Plan, "name" | "startDate" | "weekCount">
+  fields: Pick<Plan, "name" | "startDate" | "weekCount">,
+  userId: string
 ): Promise<Plan> {
-  const [row] = await db
-    .insert(plans)
-    .values({ id: crypto.randomUUID(), ...fields })
-    .returning();
-  return toPlan(row, []);
+  return db.transaction(async (tx) => {
+    if ((await countOwnedPlans(tx, userId)) >= maxPlansPerUser()) {
+      throw new PlanLimitError(maxPlansPerUser());
+    }
+    const [row] = await tx
+      .insert(plans)
+      .values({ id: crypto.randomUUID(), ...fields })
+      .returning();
+    await tx.insert(planMembers).values({ planId: row.id, userId, role: "owner" });
+    return toPlan(row, []);
+  });
 }
 
-// Saves only if the plan is still at plan.version; returns the new version.
-export async function savePlan(db: Db, plan: Plan): Promise<number> {
+// Saves only if you can edit the plan and it's still at plan.version; returns the new version.
+export async function savePlan(db: Db, plan: Plan, userId: string): Promise<number> {
   return db.transaction(async (tx) => {
+    const [member] = await tx
+      .select({ role: planMembers.role })
+      .from(planMembers)
+      .where(isMember(plan.id, userId));
+    if (!member || member.role === "viewer") throw new PlanNotFoundError(plan.id);
+
     const updated = await tx
       .update(plans)
       .set({
@@ -140,4 +192,25 @@ export async function importPlan(db: Db, plan: Omit<Plan, "version">): Promise<b
     }
     return true;
   });
+}
+
+// Gives plans with no members (e.g. freshly imported ones) to a user as owner. Returns the claimed IDs.
+export async function claimUnownedPlans(db: Db, userId: string, planIds?: string[]): Promise<string[]> {
+  return db.transaction(async (tx) => {
+    const unowned = await tx
+      .select({ id: plans.id })
+      .from(plans)
+      .leftJoin(planMembers, eq(planMembers.planId, plans.id))
+      .where(and(isNull(planMembers.planId), planIds ? inArray(plans.id, planIds) : undefined));
+    if (unowned.length === 0) return [];
+    await tx
+      .insert(planMembers)
+      .values(unowned.map(({ id }) => ({ planId: id, userId, role: "owner" as const })));
+    return unowned.map(({ id }) => id);
+  });
+}
+
+export async function findUserIdByEmail(db: Db, email: string): Promise<string | null> {
+  const [row] = await db.select({ id: user.id }).from(user).where(eq(sql`lower(${user.email})`, email.toLowerCase()));
+  return row?.id ?? null;
 }
