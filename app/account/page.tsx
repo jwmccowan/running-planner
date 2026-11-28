@@ -15,7 +15,7 @@ export default async function AccountPage() {
   const ownedPlanCount = await countOwnedPlans(getDb(), user.id);
 
   return (
-    <div className="p-4 md:p-6 max-w-2xl">
+    <div className="p-4 md:p-6 max-w-2xl mx-auto w-full">
       <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
         ← All plans
       </Link>

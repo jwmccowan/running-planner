@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Error({ unstable_retry }: { error: Error & { digest?: string }; unstable_retry: () => void }) {
   return (
-    <div className="p-4 md:p-6 max-w-2xl">
+    <div className="p-4 md:p-6 max-w-2xl mx-auto w-full">
       <h1 className="text-xl font-bold mb-2">Something went wrong</h1>
       <p className="text-sm text-zinc-700 mb-4">
         This page couldn&apos;t be loaded. It may be a temporary problem, so try again.

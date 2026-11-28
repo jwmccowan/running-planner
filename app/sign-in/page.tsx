@@ -12,7 +12,7 @@ export default async function SignInPage({
   const { deleted } = await searchParams;
 
   return (
-    <div className="p-6 max-w-md">
+    <div className="p-6 max-w-md mx-auto w-full">
       {deleted && (
         <p className="mb-4 text-sm border border-zinc-200 bg-zinc-50 rounded p-3 text-zinc-700">
           Your account and plans have been deleted.

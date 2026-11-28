@@ -15,7 +15,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // A plain-language note about the app's data, not a legal policy
 export default function PrivacyPage() {
   return (
-    <div className="p-4 md:p-6 max-w-2xl">
+    <div className="p-4 md:p-6 max-w-2xl mx-auto w-full">
       <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
         ← Running Planner
       </Link>
