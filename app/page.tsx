@@ -53,14 +53,37 @@ export default async function Home() {
             atPlanLimit ? `You can have up to ${maxPlansPerUser()} plans for now.` : undefined
           }
         />
-        <div className="w-full md:w-auto md:ml-auto flex items-center gap-2 text-sm text-zinc-500 min-w-0">
+        <div className="w-full md:w-auto md:ml-auto flex items-center gap-3 text-sm text-zinc-500 min-w-0">
+          <Link href="/help" className="shrink-0 hover:text-zinc-800">
+            How it works
+          </Link>
           <span className="truncate">{user.email}</span>
           <SignOutButton />
         </div>
       </div>
 
       {summaries.length === 0 && (
-        <p className="text-sm text-zinc-500">No plans yet.</p>
+        <div className="border border-zinc-200 rounded p-4 text-sm text-zinc-700 leading-relaxed">
+          <h2 className="text-base font-semibold text-zinc-900 mb-1">Plan your training, week by week</h2>
+          <p className="mb-3">
+            Lay out your runs and see how each week&apos;s load compares with what you&apos;ve been doing,
+            so you can build up gradually.
+          </p>
+          <ol className="list-decimal pl-5 mb-4 flex flex-col gap-1">
+            <li>Create a plan with a start date and length.</li>
+            <li>Tap a day to add runs (easy, workout, long, race) or gym sessions.</li>
+            <li>
+              Add your last few weeks of running as <strong>prior weeks</strong>, so the first weeks have
+              something to compare against.
+            </li>
+          </ol>
+          <div className="flex flex-wrap items-center gap-3">
+            <NewPlanButton label="Create your first plan" />
+            <Link href="/help" className="text-blue-600 hover:text-blue-800">
+              How it works
+            </Link>
+          </div>
+        </div>
       )}
 
       <ul className="flex flex-col gap-2">

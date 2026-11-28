@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import GoogleSignInButton from "@/app/components/GoogleSignInButton";
@@ -12,6 +13,11 @@ export default async function SignInPage() {
         Plan your training and see how each change affects weekly load.
       </p>
       <GoogleSignInButton />
+      <p className="mt-6 text-sm">
+        <Link href="/help" className="text-blue-600 hover:text-blue-800">
+          How it works
+        </Link>
+      </p>
     </div>
   );
 }

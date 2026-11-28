@@ -12,7 +12,7 @@ test("logged-out visitors are sent to sign in", async ({ page }) => {
 test("a new user sees an empty home page with their email", async ({ page, signIn }) => {
   const me = await signIn();
   await page.goto("/");
-  await expect(page.getByText("No plans yet.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Plan your training, week by week" })).toBeVisible();
   await expect(page.getByText(me.email)).toBeVisible();
 });
 
