@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import * as UH from "./undo-history";
 
+// Text fields keep their own undo, so the plan shortcut leaves them alone
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName);
+}
+
 export function useUndoHistory<T>(initialValue: T) {
   const [history, setHistory] = useState(() => UH.init(initialValue));
   const [savedValue, setSavedValue] = useState<T>(initialValue);
@@ -25,6 +31,7 @@ export function useUndoHistory<T>(initialValue: T) {
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      if (isEditableTarget(e.target)) return;
       if ((e.metaKey || e.ctrlKey) && e.key === "z") {
         if (e.shiftKey) {
           e.preventDefault();

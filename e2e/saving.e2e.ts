@@ -44,3 +44,28 @@ test("a save from a stale tab is rejected and Reload shows the latest", async ({
   await expect(page.locator("h1")).toHaveText("Changed in another tab");
   await expect(page.getByText("This plan was changed somewhere else")).toHaveCount(0);
 });
+
+test("the undo shortcut leaves text fields alone but undoes the plan elsewhere", async ({ page, signIn, seedPlan }) => {
+  const me = await signIn();
+  const plan = await seedPlan(me, { name: "Original" });
+  await page.goto(`/plans/${plan.id}`);
+
+  await header(page).getByRole("button", { name: "Plan settings" }).click();
+  await dialog(page).locator("input:not([type])").fill("Renamed");
+  await dialog(page).getByRole("button", { name: "Save" }).click();
+  await expect(page.locator("h1")).toHaveText("Renamed");
+
+  await header(page).getByRole("button", { name: "Plan settings" }).click();
+  const nameField = dialog(page).locator("input:not([type])");
+  await nameField.pressSequentially(" again");
+  const prevented = await nameField.evaluate(
+    (input) => !input.dispatchEvent(new KeyboardEvent("keydown", { key: "z", metaKey: true, ctrlKey: true, bubbles: true, cancelable: true }))
+  );
+  expect(prevented).toBe(false);
+  await nameField.press("ControlOrMeta+z");
+  await expect(page.locator("h1")).toHaveText("Renamed");
+
+  await dialog(page).getByRole("button", { name: "Cancel" }).click();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(page.locator("h1")).toHaveText("Original");
+});
