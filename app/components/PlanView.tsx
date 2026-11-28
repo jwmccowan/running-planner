@@ -3,9 +3,22 @@
 import { useEffect, useState, useActionState, startTransition, useTransition } from "react";
 import Link from "next/link";
 import type { Activity, ActivityStatus, Plan } from "@/lib/types";
+import {
+  addBlock,
+  applySettings,
+  canMoveActivity,
+  canPlaceBlock,
+  moveActivity,
+  moveBlock,
+  removeBlock,
+  replaceDay,
+  setActivityStatus,
+  setPriorWeeks,
+  type PlanEdits,
+} from "@/lib/plan-edits";
+import type { PlanSettingsFields } from "@/lib/plan-settings";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
 import { useUndoHistory } from "@/lib/use-undo-history";
-import { limits } from "@/lib/limits";
 import { deletePlanAction, savePlanAction } from "@/app/actions";
 import WeekRow from "./WeekRow";
 import MobileWeekCard from "./MobileWeekCard";
@@ -17,11 +30,6 @@ import { AddBlockGap, BlockBar, BLOCK_MIME } from "./BlockBar";
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 type SaveState = { version: number; conflict: boolean; failed: boolean };
-
-type PlanEdits = Pick<
-  Plan,
-  "name" | "startDate" | "weekCount" | "activities" | "priorWeeklyDistances" | "blockStarts"
->;
 
 export default function PlanView({ plan }: { plan: Plan }) {
   const {
@@ -83,14 +91,6 @@ export default function PlanView({ plan }: { plan: Plan }) {
     startTransition(() => dispatch(edits));
   }
 
-  function setActivities(update: (prev: Activity[]) => Activity[]) {
-    setEdits((prev) => ({ ...prev, activities: update(prev.activities) }));
-  }
-
-  function setBlockStarts(update: (prev: string[]) => string[]) {
-    setEdits((prev) => ({ ...prev, blockStarts: update(prev.blockStarts) }));
-  }
-
   function toggleWeek(startDate: string) {
     setExpandedWeeks((prev) => {
       const next = new Set(prev);
@@ -104,55 +104,43 @@ export default function PlanView({ plan }: { plan: Plan }) {
   }
 
   function handleDayEdit(date: string, updated: Activity[]) {
-    setActivities((prev) => [
-      ...prev.filter((a) => a.date !== date),
-      ...updated,
-    ]);
+    setEdits((prev) => replaceDay(prev, date, updated));
     setEditingDate(null);
   }
 
   function handlePriorWeeksEdit(updated: number[]) {
-    setEdits((prev) => ({ ...prev, priorWeeklyDistances: updated }));
+    setEdits((prev) => setPriorWeeks(prev, updated));
     setEditingPriorWeeks(false);
   }
 
-  function handleSettingsEdit(
-    updated: Pick<PlanEdits, "name" | "startDate" | "weekCount" | "activities" | "blockStarts">
-  ) {
-    setEdits((prev) => ({ ...prev, ...updated }));
+  function handleSettingsEdit(updated: PlanSettingsFields & Pick<Plan, "name">) {
+    setEdits((prev) => applySettings(prev, updated));
     setEditingSettings(false);
   }
 
   function handleStatusChange(activityId: string, status: ActivityStatus | undefined) {
-    setActivities((prev) =>
-      prev.map((a) => (a.id === activityId ? { ...a, status } : a))
-    );
+    setEdits((prev) => setActivityStatus(prev, activityId, status));
   }
 
   function handleActivityMove(activityId: string, date: string) {
-    const activity = activities.find((a) => a.id === activityId);
-    if (!activity || activity.date === date) return;
-    if (activities.filter((a) => a.date === date).length >= limits.maxActivitiesPerDay) return;
-    setActivities((prev) => [
-      ...prev.filter((a) => a.id !== activityId),
-      { ...activity, date },
-    ]);
+    if (!canMoveActivity(edits, activityId, date)) return;
+    setEdits((prev) => moveActivity(prev, activityId, date));
   }
 
   function handleBlockAdd(weekStart: string) {
-    setBlockStarts((prev) => [...prev, weekStart].sort());
+    setEdits((prev) => addBlock(prev, weekStart));
   }
 
   function handleBlockRemove(weekStart: string) {
-    setBlockStarts((prev) => prev.filter((d) => d !== weekStart));
+    setEdits((prev) => removeBlock(prev, weekStart));
   }
 
-  function canDropBlock(weekStart: string, weekIndex: number): boolean {
-    return draggingBlock !== null && weekIndex > 0 && !blockStarts.includes(weekStart);
+  function canDropBlock(weekStart: string): boolean {
+    return draggingBlock !== null && canPlaceBlock(edits, weekStart);
   }
 
-  function handleBlockDragOver(e: React.DragEvent, weekStart: string, weekIndex: number) {
-    if (!e.dataTransfer.types.includes(BLOCK_MIME) || !canDropBlock(weekStart, weekIndex)) return;
+  function handleBlockDragOver(e: React.DragEvent, weekStart: string) {
+    if (!e.dataTransfer.types.includes(BLOCK_MIME) || !canDropBlock(weekStart)) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     setBlockDropTarget(weekStart);
@@ -163,11 +151,11 @@ export default function PlanView({ plan }: { plan: Plan }) {
     setBlockDropTarget(null);
   }
 
-  function handleBlockDrop(e: React.DragEvent, weekStart: string, weekIndex: number) {
-    if (!draggingBlock || !canDropBlock(weekStart, weekIndex)) return;
+  function handleBlockDrop(e: React.DragEvent, weekStart: string) {
+    if (!draggingBlock || !canDropBlock(weekStart)) return;
     e.preventDefault();
     const from = draggingBlock;
-    setBlockStarts((prev) => prev.map((d) => (d === from ? weekStart : d)).sort());
+    setEdits((prev) => moveBlock(prev, from, weekStart));
     setDraggingBlock(null);
     setBlockDropTarget(null);
   }
@@ -322,9 +310,9 @@ export default function PlanView({ plan }: { plan: Plan }) {
           <div
             key={summary.startDate}
             className="relative"
-            onDragOver={(e) => handleBlockDragOver(e, summary.startDate, i)}
+            onDragOver={(e) => handleBlockDragOver(e, summary.startDate)}
             onDragLeave={handleBlockDragLeave}
-            onDrop={(e) => handleBlockDrop(e, summary.startDate, i)}
+            onDrop={(e) => handleBlockDrop(e, summary.startDate)}
           >
             {blockDropTarget === summary.startDate && (
               <div className="pointer-events-none absolute top-0 inset-x-0 h-6 z-20 border-2 border-dashed border-blue-400" />
