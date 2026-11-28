@@ -139,6 +139,20 @@ export async function createPlan(
   });
 }
 
+// Deletes the plans you own and then your user, which cascades to sessions, linked accounts and memberships.
+// Returns how many plans were deleted.
+export async function deleteAccount(db: Db, userId: string): Promise<number> {
+  return db.transaction(async (tx) => {
+    const owned = tx
+      .select({ planId: planMembers.planId })
+      .from(planMembers)
+      .where(and(eq(planMembers.userId, userId), eq(planMembers.role, "owner")));
+    const deletedPlans = await tx.delete(plans).where(inArray(plans.id, owned)).returning({ id: plans.id });
+    await tx.delete(user).where(eq(user.id, userId));
+    return deletedPlans.length;
+  });
+}
+
 // Only the owner can delete a plan; its activities and memberships go with it (cascade).
 export async function deletePlan(db: Db, planId: string, userId: string): Promise<void> {
   const deleted = await db

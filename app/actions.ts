@@ -3,7 +3,10 @@
 import { redirect } from "next/navigation";
 import type { Plan } from "@/lib/types";
 import { getDb } from "@/lib/db";
-import { createPlan, deletePlan, PlanConflictError, savePlan } from "@/lib/plan-store";
+import { headers } from "next/headers";
+import { DELETE_ACCOUNT_CONFIRMATION } from "@/lib/account";
+import { auth } from "@/lib/auth";
+import { createPlan, deleteAccount, deletePlan, PlanConflictError, savePlan } from "@/lib/plan-store";
 import { planProblems, planSettingsProblems } from "@/lib/plan-validation";
 import { requireUser } from "@/lib/session";
 
@@ -36,4 +39,15 @@ export async function deletePlanAction(planId: string): Promise<void> {
   const user = await requireUser();
   await deletePlan(getDb(), planId, user.id);
   redirect("/");
+}
+
+export async function deleteAccountAction(confirmation: string): Promise<void> {
+  const user = await requireUser();
+  if (confirmation.trim().toLowerCase() !== DELETE_ACCOUNT_CONFIRMATION) {
+    throw new Error(`Type "${DELETE_ACCOUNT_CONFIRMATION}" to confirm`);
+  }
+  // Sign out first so Better Auth clears the session cookie, then delete everything
+  await auth.api.signOut({ headers: await headers() });
+  await deleteAccount(getDb(), user.id);
+  redirect("/sign-in?deleted=1");
 }
