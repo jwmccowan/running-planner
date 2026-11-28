@@ -57,7 +57,9 @@ export default async function Home() {
           <Link href="/help" className="shrink-0 hover:text-zinc-800">
             How it works
           </Link>
-          <span className="truncate">{user.email}</span>
+          <Link href="/account" title="Account" className="truncate hover:text-zinc-800">
+            {user.email}
+          </Link>
           <SignOutButton />
         </div>
       </div>

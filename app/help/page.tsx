@@ -97,6 +97,12 @@ export default function HelpPage() {
           </ul>
         </Section>
       </div>
+
+      <p className="mt-8 text-sm">
+        <Link href="/privacy" className="text-blue-600 hover:text-blue-800">
+          Privacy
+        </Link>
+      </p>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   claimUnownedPlans,
   countOwnedPlans,
   createPlan,
+  deleteAccount,
   deletePlan,
   findUserIdByEmail,
   importPlan,
@@ -283,5 +284,42 @@ describe("deletePlan", () => {
 
   it("reports a missing plan as not found", async () => {
     await expect(deletePlan(db, "missing", ALICE)).rejects.toThrow(PlanNotFoundError);
+  });
+});
+
+describe("deleteAccount", () => {
+  it("deletes the user, their sessions, linked accounts and owned plans", async () => {
+    const mine = await createPlan(db, fields, ALICE);
+    await savePlan(db, { ...mine, activities: [run("a", "2026-12-08", 6)] }, ALICE);
+    const expires = new Date(Date.now() + 86_400_000);
+    await db.insert(schema.session).values({ id: "s1", token: "t1", userId: ALICE, expiresAt: expires });
+    await db.insert(schema.account).values({ id: "acc1", accountId: "google-1", providerId: "google", userId: ALICE });
+
+    expect(await deleteAccount(db, ALICE)).toBe(1);
+
+    expect(await db.select().from(schema.user).where(sql`id = ${ALICE}`)).toEqual([]);
+    expect(await db.select().from(schema.session)).toEqual([]);
+    expect(await db.select().from(schema.account)).toEqual([]);
+    expect(await db.select().from(schema.plans)).toEqual([]);
+    expect(await db.select().from(schema.activities)).toEqual([]);
+  });
+
+  it("leaves other people's plans, and only removes the user's membership of them", async () => {
+    const bobs = await createPlan(db, fields, BOB);
+    await db.insert(schema.planMembers).values({ planId: bobs.id, userId: ALICE, role: "editor" });
+
+    expect(await deleteAccount(db, ALICE)).toBe(0);
+
+    expect(await loadPlan(db, bobs.id, BOB)).not.toBeNull();
+    expect(await db.select().from(schema.planMembers)).toEqual([
+      expect.objectContaining({ planId: bobs.id, userId: BOB, role: "owner" }),
+    ]);
+  });
+
+  it("does nothing to other users", async () => {
+    await createPlan(db, fields, BOB);
+    await deleteAccount(db, ALICE);
+    expect((await listPlans(db, BOB)).length).toBe(1);
+    expect(await findUserIdByEmail(db, "bob@example.com")).toBe(BOB);
   });
 });
