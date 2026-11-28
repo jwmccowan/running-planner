@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState, startTransition, useTransition } from "react";
+import { useEffect, useState, useActionState, startTransition, useTransition } from "react";
 import Link from "next/link";
 import type { Activity, ActivityStatus, Plan } from "@/lib/types";
 import { computeWeekSummaries, groupActivitiesByWeek } from "@/lib/calculations";
@@ -16,7 +16,7 @@ import { AddBlockGap, BlockBar, BLOCK_MIME } from "./BlockBar";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-type SaveState = { version: number; conflict: boolean };
+type SaveState = { version: number; conflict: boolean; failed: boolean };
 
 type PlanEdits = Pick<
   Plan,
@@ -53,16 +53,35 @@ export default function PlanView({ plan }: { plan: Plan }) {
   const [blockDropTarget, setBlockDropTarget] = useState<string | null>(null);
   const [saveState, dispatch, saving] = useActionState(
     async (prev: SaveState, toSave: PlanEdits): Promise<SaveState> => {
-      const result = await savePlanAction({ ...plan, ...toSave, version: prev.version });
-      if (!result.ok) return { ...prev, conflict: true };
-      markSaved(toSave);
-      return { version: result.version, conflict: false };
+      try {
+        const result = await savePlanAction({ ...plan, ...toSave, version: prev.version });
+        if (!result.ok) return { ...prev, conflict: true, failed: false };
+        markSaved(toSave);
+        return { version: result.version, conflict: false, failed: false };
+      } catch {
+        return { ...prev, failed: true };
+      }
     },
-    { version: plan.version, conflict: false }
+    { version: plan.version, conflict: false, failed: false }
   );
+  // After a conflict the edits can't be saved, and the banner already says Reload loses them
+  const hasUnsavedEdits = !saved && !saveState.conflict;
+
+  useEffect(() => {
+    if (!hasUnsavedEdits) return;
+    function warnBeforeLeaving(e: BeforeUnloadEvent) {
+      e.preventDefault();
+    }
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [hasUnsavedEdits]);
 
   const summaries = computeWeekSummaries(activities, startDate, weekCount, priorWeeklyDistances);
   const byWeek = groupActivitiesByWeek(activities);
+
+  function save() {
+    startTransition(() => dispatch(edits));
+  }
 
   function setActivities(update: (prev: Activity[]) => Activity[]) {
     setEdits((prev) => ({ ...prev, activities: update(prev.activities) }));
@@ -162,7 +181,15 @@ export default function PlanView({ plan }: { plan: Plan }) {
   return (
     <div className="p-4 md:p-6">
       <div className="flex items-center justify-between text-sm text-zinc-500">
-        <Link href="/" className="hover:text-zinc-800">
+        <Link
+          href="/"
+          onClick={(e) => {
+            if (hasUnsavedEdits && !window.confirm("You have unsaved changes. Leave without saving?")) {
+              e.preventDefault();
+            }
+          }}
+          className="hover:text-zinc-800"
+        >
           ← All plans
         </Link>
         {/* New tab, so unsaved edits on this page aren't lost */}
@@ -243,13 +270,27 @@ export default function PlanView({ plan }: { plan: Plan }) {
           )}
         </div>
         <button
-          onClick={() => startTransition(() => dispatch(edits))}
+          onClick={save}
           disabled={saved || saving || saveState.conflict}
           className="ml-auto md:ml-0 px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {saving ? "Saving…" : saved ? "Saved" : "Save"}
         </button>
       </div>
+      {saveState.failed && !saving && (
+        <div className="mb-4 text-sm border border-red-200 bg-red-50 rounded p-3 flex items-center gap-3">
+          <p className="text-red-700">
+            Your changes couldn&apos;t be saved. They&apos;re still here, so check your connection and
+            try again.
+          </p>
+          <button
+            onClick={save}
+            className="ml-auto px-3 py-1 rounded bg-red-600 text-white hover:bg-red-700 whitespace-nowrap"
+          >
+            Retry
+          </button>
+        </div>
+      )}
       {saveState.conflict && (
         <div className="mb-4 text-sm border border-red-200 bg-red-50 rounded p-3 flex items-center gap-3">
           <p className="text-red-700">
