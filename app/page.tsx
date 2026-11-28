@@ -17,7 +17,7 @@ export default async function Home() {
   const summaries = plans.map(summarizePlan);
 
   return (
-    <div className="p-4 md:p-6 max-w-2xl">
+    <div className="p-4 md:p-6 max-w-2xl mx-auto w-full">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4">
         <h1 className="text-xl font-bold">Running Planner</h1>
         <NewPlanButton
