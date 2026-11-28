@@ -35,6 +35,29 @@ test("pages fit the screen with no sideways scrolling", async ({ page, signIn, s
   await expect(dialog(page).getByRole("button", { name: "Save" })).toBeInViewport();
 });
 
+test("form fields are at least 16px so iOS doesn't zoom in when they're focused", async ({ page, signIn, seedPlan }) => {
+  const me = await signIn();
+  const plan = await seedWeek(seedPlan, me);
+  const fieldSizes = () =>
+    dialog(page)
+      .locator("input, select, textarea")
+      .evaluateAll((fields) => fields.map((f) => parseFloat(getComputedStyle(f).fontSize)));
+
+  await page.goto(`/plans/${plan.id}`);
+  await mobileWeek(page, "2026-12-07").getByText("Easy run").click();
+  expect(Math.min(...(await fieldSizes()))).toBeGreaterThanOrEqual(16);
+  await dialog(page).getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("button", { name: "More actions" }).click();
+  await page.getByRole("button", { name: "Plan settings" }).click();
+  expect(Math.min(...(await fieldSizes()))).toBeGreaterThanOrEqual(16);
+  await dialog(page).getByRole("button", { name: "Cancel" }).click();
+
+  await page.getByRole("button", { name: "More actions" }).click();
+  await page.getByRole("button", { name: "Prior weeks", exact: true }).click();
+  expect(Math.min(...(await fieldSizes()))).toBeGreaterThanOrEqual(16);
+});
+
 test("week cards list activities; tapping one edits its day", async ({ page, signIn, seedPlan, dbPlan }) => {
   const me = await signIn();
   const plan = await seedWeek(seedPlan, me);
