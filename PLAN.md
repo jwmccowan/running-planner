@@ -34,6 +34,7 @@
 - **Gym tracking**: out of scope for v1 — model supports it, UI ignores it
 - **Blocks**: user-defined via `blockStarts` (ISO Mondays), edited in an "Edit blocks" mode; cosmetic only (no effect on calculations)
 - **Future features to keep in mind**: move workouts, bulk updates, copy/paste, undo (don't design these out)
+- **Training thresholds are defaults, not advice**: chronic weeks, the 0.8–1.3× acute range and the 80% easy target live in `lib/config.ts`, and UI/help text reads them from there. They should become configurable (per plan or per user) later; the help page says they're rules of thumb, not medical or coaching advice
 - **Activity status**: `status?: "completed" | "missed"` on Activity (undefined = pending). Missed activities excluded from all load calculations.
 
 ## Next steps: persistence, accounts, deploy (#6)

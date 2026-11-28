@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { config } from "@/lib/config";
 import type { WeekSummary as WeekSummaryType } from "@/lib/types";
 
@@ -64,6 +65,23 @@ function CompactWeekSummary({
 }
 
 // The stat lines of an expanded week (shared by the desktop summary column and the phone week card)
+// Opens the matching section of the help page in a new tab, so unsaved plan edits aren't lost
+function HelpLink({ section, label }: { section: string; label: string }) {
+  return (
+    <Link
+      href={`/help#${section}`}
+      target="_blank"
+      rel="noopener"
+      onClick={(e) => e.stopPropagation()}
+      aria-label={`What is ${label}?`}
+      title={`What is ${label}?`}
+      className="inline-block ml-1 text-zinc-400 hover:text-zinc-700"
+    >
+      ⓘ
+    </Link>
+  );
+}
+
 export function WeekStats({
   summary,
   onAddPriorWeeks,
@@ -71,7 +89,7 @@ export function WeekStats({
   summary: WeekSummaryType;
   onAddPriorWeeks?: () => void;
 }) {
-  const easyEnough = summary.percentEasy >= 80;
+  const easyEnough = summary.percentEasy >= config.easyTargetPercent;
 
   const change = summary.acuteVsChronicChange;
   const chronicChangeStr = change === null ? "" : `(${change >= 0 ? "+" : ""}${Math.round(change)}%)`;
@@ -86,6 +104,7 @@ export function WeekStats({
         Chronic distance:{" "}
         {summary.chronicDistance === null ? "—" : formatNum(summary.chronicDistance)}
         {partialHistory && <span className="text-zinc-500">{partialHistory}</span>}
+        <HelpLink section="chronic" label="chronic distance" />
       </div>
       {onAddPriorWeeks && <AddPriorWeeksPrompt onClick={onAddPriorWeeks} />}
       <div className="text-zinc-800">
@@ -93,12 +112,15 @@ export function WeekStats({
         {summary.idealAcuteRange === null
           ? "—"
           : `(${formatNum(summary.idealAcuteRange[0])} – ${formatNum(summary.idealAcuteRange[1])})`}
+        <HelpLink section="range" label="the ideal acute range" />
       </div>
       <div className={acuteColor(summary)}>
         Acute distance: {formatNum(summary.acuteDistance)} {chronicChangeStr}
+        <HelpLink section="acute" label="acute distance" />
       </div>
       <div className={easyEnough ? "text-green-700" : "text-red-600"}>
         Percent easy: {Math.round(summary.percentEasy)}%
+        <HelpLink section="easy" label="percent easy" />
       </div>
     </>
   );

@@ -161,9 +161,15 @@ export default function PlanView({ plan }: { plan: Plan }) {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/" className="text-sm text-zinc-500 hover:text-zinc-800">
-        ← All plans
-      </Link>
+      <div className="flex items-center justify-between text-sm text-zinc-500">
+        <Link href="/" className="hover:text-zinc-800">
+          ← All plans
+        </Link>
+        {/* New tab, so unsaved edits on this page aren't lost */}
+        <Link href="/help" target="_blank" rel="noopener" className="hover:text-zinc-800">
+          How it works
+        </Link>
+      </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-4 mt-1">
         <h1 className="text-xl font-bold w-full md:w-auto">{name}</h1>
         <div className="flex items-center gap-1">

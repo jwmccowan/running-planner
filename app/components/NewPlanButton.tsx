@@ -13,7 +13,13 @@ function nextMonday(): string {
   return addDays(today, ((8 - day) % 7) || 7);
 }
 
-export default function NewPlanButton({ disabledReason }: { disabledReason?: string }) {
+export default function NewPlanButton({
+  disabledReason,
+  label = "+ New plan",
+}: {
+  disabledReason?: string;
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [creating, startCreating] = useTransition();
 
@@ -25,7 +31,7 @@ export default function NewPlanButton({ disabledReason }: { disabledReason?: str
         title={disabledReason}
         className="px-3 py-1 text-sm rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
       >
-        {creating ? "Creating…" : "+ New plan"}
+        {creating ? "Creating…" : label}
       </button>
       {open && (
         <PlanSettingsModal
