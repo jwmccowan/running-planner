@@ -156,11 +156,13 @@ export default function DayEditorModal({
                   maxLength={limits.maxNameLength}
                   onChange={(e) => updateDraft(draft.id, { name: e.target.value })}
                   placeholder="Name"
-                  className="flex-1 text-sm border border-zinc-300 rounded px-2 py-0.5"
+                  className="flex-1 min-w-0 text-sm border border-zinc-300 rounded px-2 py-0.5"
                 />
                 <button
                   onClick={() => removeDraft(draft.id)}
-                  className="text-zinc-400 hover:text-red-600 text-sm px-1"
+                  aria-label="Remove activity"
+                  title="Remove activity"
+                  className="shrink-0 w-8 h-8 -mr-1 flex items-center justify-center rounded text-zinc-400 hover:text-red-600 hover:bg-zinc-100 text-sm"
                 >
                   ✕
                 </button>

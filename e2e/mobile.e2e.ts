@@ -58,6 +58,19 @@ test("form fields are at least 16px so iOS doesn't zoom in when they're focused"
   expect(Math.min(...(await fieldSizes()))).toBeGreaterThanOrEqual(16);
 });
 
+test("the day editor's remove button stays inside its activity box", async ({ page, signIn, seedPlan }) => {
+  const me = await signIn();
+  const plan = await seedWeek(seedPlan, me);
+  await page.goto(`/plans/${plan.id}`);
+  await mobileWeek(page, "2026-12-07").getByText("Easy run").click();
+
+  const remove = dialog(page).getByRole("button", { name: "Remove activity" });
+  const box = await remove.locator("xpath=ancestor::div[contains(@class, 'border-zinc-200')][1]").boundingBox();
+  const button = await remove.boundingBox();
+  expect(button && box && button.x + button.width <= box.x + box.width).toBe(true);
+  await expect(remove).toBeInViewport();
+});
+
 test("week cards list activities; tapping one edits its day", async ({ page, signIn, seedPlan, dbPlan }) => {
   const me = await signIn();
   const plan = await seedWeek(seedPlan, me);
