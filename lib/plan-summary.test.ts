@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sortPlanSummaries, summarizePlan } from "./plan-summary";
+import { planStatus, sortPlanSummaries, summarizePlan } from "./plan-summary";
 import type { Activity, Plan } from "./types";
 
 function run(date: string, distance: number, status?: Activity["status"]): Activity {
@@ -20,24 +20,24 @@ describe("summarizePlan", () => {
   ]);
 
   it("ends on the Sunday of the last week", () => {
-    expect(summarizePlan(p, "2026-12-01").endDate).toBe("2026-12-20");
+    expect(summarizePlan(p).endDate).toBe("2026-12-20");
   });
 
   it("totals run distance inside the plan, excluding missed runs", () => {
-    expect(summarizePlan(p, "2026-12-01").totalDistance).toBe(22);
+    expect(summarizePlan(p).totalDistance).toBe(22);
   });
 
   it("is upcoming before the start date", () => {
-    expect(summarizePlan(p, "2026-12-06").status).toBe("upcoming");
+    expect(planStatus(summarizePlan(p), "2026-12-06")).toBe("upcoming");
   });
 
   it("is current from the start date through the last Sunday", () => {
-    expect(summarizePlan(p, "2026-12-07").status).toBe("current");
-    expect(summarizePlan(p, "2026-12-20").status).toBe("current");
+    expect(planStatus(summarizePlan(p), "2026-12-07")).toBe("current");
+    expect(planStatus(summarizePlan(p), "2026-12-20")).toBe("current");
   });
 
   it("is past after the last Sunday", () => {
-    expect(summarizePlan(p, "2026-12-21").status).toBe("past");
+    expect(planStatus(summarizePlan(p), "2026-12-21")).toBe("past");
   });
 });
 
@@ -50,10 +50,10 @@ describe("sortPlanSummaries", () => {
     plan("past-recent", "2026-09-07", 4),
     plan("upcoming-soon", "2027-01-04", 4),
     plan("current-early", "2026-11-02", 8),
-  ].map((p) => summarizePlan(p, today));
+  ].map((p) => summarizePlan(p));
 
   it("orders current, then upcoming soonest first, then past most recent first", () => {
-    expect(sortPlanSummaries(summaries).map((s) => s.id)).toEqual([
+    expect(sortPlanSummaries(summaries, today).map((s) => s.id)).toEqual([
       "current-early",
       "current-late",
       "upcoming-soon",

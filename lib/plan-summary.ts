@@ -11,32 +11,35 @@ export type PlanSummary = {
   endDate: string;
   weekCount: number;
   totalDistance: number;
-  status: PlanStatus;
 };
 
-export function summarizePlan(plan: Plan, today: string): PlanSummary {
-  const endDate = planEndDate(plan.startDate, plan.weekCount);
+export function summarizePlan(plan: Plan): PlanSummary {
   const weeks = computeWeekSummaries(plan.activities, plan.startDate, plan.weekCount);
-  const status: PlanStatus =
-    today < plan.startDate ? "upcoming" : today > endDate ? "past" : "current";
   return {
     id: plan.id,
     name: plan.name,
     startDate: plan.startDate,
-    endDate,
+    endDate: planEndDate(plan.startDate, plan.weekCount),
     weekCount: plan.weekCount,
     totalDistance: weeks.reduce((sum, w) => sum + w.acuteDistance, 0),
-    status,
   };
+}
+
+export function planStatus(summary: PlanSummary, today: string): PlanStatus {
+  if (today < summary.startDate) return "upcoming";
+  if (today > summary.endDate) return "past";
+  return "current";
 }
 
 const STATUS_ORDER: Record<PlanStatus, number> = { current: 0, upcoming: 1, past: 2 };
 
 // Current and upcoming plans soonest first, then past plans most recent first
-export function sortPlanSummaries(summaries: PlanSummary[]): PlanSummary[] {
+export function sortPlanSummaries(summaries: PlanSummary[], today: string): PlanSummary[] {
   return [...summaries].sort((a, b) => {
-    if (a.status !== b.status) return STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-    if (a.status === "past") return b.endDate.localeCompare(a.endDate);
+    const statusA = planStatus(a, today);
+    const statusB = planStatus(b, today);
+    if (statusA !== statusB) return STATUS_ORDER[statusA] - STATUS_ORDER[statusB];
+    if (statusA === "past") return b.endDate.localeCompare(a.endDate);
     return a.startDate.localeCompare(b.startDate);
   });
 }

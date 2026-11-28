@@ -50,3 +50,25 @@ test("home lists current plans, then upcoming, then past", async ({ page, signIn
   await expect(plans.nth(1)).toContainText("Upcoming plan");
   await expect(plans.nth(2)).toContainText("Past plan");
 });
+
+test.describe("in Sydney before 10am, when it's still yesterday in UTC", () => {
+  test.use({ timezoneId: "Australia/Sydney" });
+
+  test("plan status follows the browser's date", async ({ page, signIn, seedPlan }) => {
+    const me = await signIn();
+    const monday = addWeeks(mondayOf(new Date()), 3);
+    const sundayBefore = new Date(monday + "T00:00:00Z");
+    sundayBefore.setUTCDate(sundayBefore.getUTCDate() - 1);
+    // 21:30 UTC on Sunday is 07:30 or 08:30 on Monday in Sydney, depending on daylight saving
+    await page.clock.setFixedTime(new Date(sundayBefore.toISOString().slice(0, 10) + "T21:30:00Z"));
+    await seedPlan(me, { name: "Starts today", startDate: monday, weekCount: 1 });
+    await seedPlan(me, { name: "Ended yesterday", startDate: addWeeks(monday, -1), weekCount: 1 });
+
+    await page.goto("/");
+    const plans = page.getByRole("listitem");
+    await expect(plans.nth(0)).toContainText("Starts today");
+    await expect(plans.nth(0)).toContainText("Now");
+    await expect(plans.nth(1)).toContainText("Ended yesterday");
+    await expect(plans.nth(1)).toContainText("Past");
+  });
+});
